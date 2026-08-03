@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Castaneas">
+  <rect width="512" height="512" rx="112" fill="#1f1916"/>
+  <rect x="48" y="48" width="416" height="416" rx="96" fill="#2a211d" stroke="#8b5a44" stroke-width="12"/>
+  <path d="M168 302c0-78 48-120 128-120 38 0 74 10 108 28l-20 48c-28-14-55-21-81-21-50 0-78 22-78 63 0 45 28 68 83 68 23 0 49-5 76-15v49c-24 11-54 17-91 17-81 0-125-42-125-117z" fill="#f1ede6"/>
+  <circle cx="372" cy="162" r="18" fill="#d98b45"/>
+</svg>

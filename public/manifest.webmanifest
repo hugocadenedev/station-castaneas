@@ -1,0 +1,24 @@
+{
+    "name": "Castaneas Station",
+    "short_name": "Castaneas",
+    "description": "Pilotage de station fruitiere Castaneas: receptions, calibrage, stock, commandes et backoffice.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#1f1916",
+    "theme_color": "#2a211d",
+    "lang": "fr",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/favicon.ico",
+            "sizes": "48x48",
+            "type": "image/x-icon"
+        }
+    ]
+}

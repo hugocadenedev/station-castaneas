@@ -64,11 +64,26 @@ Route::middleware('auth')->group(function () {
     Route::middleware('superadmin')->group(function () {
         Route::get('/backoffice', [BackofficeController::class, 'index'])->name('backoffice.index');
         Route::post('/backoffice/customers', [BackofficeController::class, 'storeCustomer'])->name('backoffice.customers.store');
+        Route::patch('/backoffice/customers/{customer}', [BackofficeController::class, 'updateCustomer'])->name('backoffice.customers.update');
+        Route::delete('/backoffice/customers/{customer}', [BackofficeController::class, 'destroyCustomer'])->name('backoffice.customers.destroy');
         Route::post('/backoffice/fruits', [BackofficeController::class, 'storeFruit'])->name('backoffice.fruits.store');
+        Route::patch('/backoffice/fruits/{fruit}', [BackofficeController::class, 'updateFruit'])->name('backoffice.fruits.update');
+        Route::delete('/backoffice/fruits/{fruit}', [BackofficeController::class, 'destroyFruit'])->name('backoffice.fruits.destroy');
         Route::post('/backoffice/varieties', [BackofficeController::class, 'storeVariety'])->name('backoffice.varieties.store');
+        Route::patch('/backoffice/varieties/{variety}', [BackofficeController::class, 'updateVariety'])->name('backoffice.varieties.update');
+        Route::delete('/backoffice/varieties/{variety}', [BackofficeController::class, 'destroyVariety'])->name('backoffice.varieties.destroy');
         Route::post('/backoffice/suppliers', [BackofficeController::class, 'storeSupplier'])->name('backoffice.suppliers.store');
+        Route::patch('/backoffice/suppliers/{supplier}', [BackofficeController::class, 'updateSupplier'])->name('backoffice.suppliers.update');
+        Route::delete('/backoffice/suppliers/{supplier}', [BackofficeController::class, 'destroySupplier'])->name('backoffice.suppliers.destroy');
         Route::post('/backoffice/calibers', [BackofficeController::class, 'storeCaliber'])->name('backoffice.calibers.store');
+        Route::patch('/backoffice/calibers/{caliber}', [BackofficeController::class, 'updateCaliber'])->name('backoffice.calibers.update');
+        Route::delete('/backoffice/calibers/{caliber}', [BackofficeController::class, 'destroyCaliber'])->name('backoffice.calibers.destroy');
+        Route::post('/backoffice/tare-types', [BackofficeController::class, 'storeTareType'])->name('backoffice.tare-types.store');
+        Route::patch('/backoffice/tare-types/{tareType}', [BackofficeController::class, 'updateTareType'])->name('backoffice.tare-types.update');
+        Route::delete('/backoffice/tare-types/{tareType}', [BackofficeController::class, 'destroyTareType'])->name('backoffice.tare-types.destroy');
         Route::post('/backoffice/users', [BackofficeController::class, 'storeUser'])->name('backoffice.users.store');
+        Route::patch('/backoffice/users/{user}', [BackofficeController::class, 'updateUser'])->name('backoffice.users.update');
+        Route::delete('/backoffice/users/{user}', [BackofficeController::class, 'destroyUser'])->name('backoffice.users.destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

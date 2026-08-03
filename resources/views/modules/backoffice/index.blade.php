@@ -23,7 +23,7 @@
                 <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-4 text-sm text-stone-700">
                     <div class="border border-stone-200 bg-stone-50 p-4"><div class="text-xs uppercase tracking-[0.18em] text-stone-500">Clients</div><div class="mt-2 text-2xl font-semibold text-stone-900">{{ $customers->count() }}</div></div>
                     <div class="border border-stone-200 bg-stone-50 p-4"><div class="text-xs uppercase tracking-[0.18em] text-stone-500">Fournisseurs</div><div class="mt-2 text-2xl font-semibold text-stone-900">{{ $suppliers->count() }}</div></div>
-                    <div class="border border-stone-200 bg-stone-50 p-4"><div class="text-xs uppercase tracking-[0.18em] text-stone-500">Références production</div><div class="mt-2 text-2xl font-semibold text-stone-900">{{ $fruits->count() + $fruits->sum(fn ($fruit) => $fruit->varieties->count()) + $calibers->count() }}</div></div>
+                    <div class="border border-stone-200 bg-stone-50 p-4"><div class="text-xs uppercase tracking-[0.18em] text-stone-500">Références production</div><div class="mt-2 text-2xl font-semibold text-stone-900">{{ $fruits->count() + $fruits->sum(fn ($fruit) => $fruit->varieties->count()) + $calibers->count() + $tareTypes->count() }}</div></div>
                     <div class="border border-stone-200 bg-stone-50 p-4"><div class="text-xs uppercase tracking-[0.18em] text-stone-500">Utilisateurs</div><div class="mt-2 text-2xl font-semibold text-stone-900">{{ $users->count() }}</div></div>
                 </div>
             </div>
@@ -60,18 +60,46 @@
                                     <th>Code GGN</th>
                                     <th>Contact</th>
                                     <th>Coordonnées</th>
+                                    <th>Notes</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-stone-100 bg-white">
                                 @forelse ($customers as $customer)
                                     <tr>
-                                        <td data-label="Client" class="font-semibold text-stone-800">{{ $customer->name }}</td>
-                                        <td data-label="Code GGN">{{ $customer->reference_code ?: 'Non renseigné' }}</td>
-                                        <td data-label="Contact">{{ $customer->contact_name ?: 'Non renseigné' }}</td>
-                                        <td data-label="Coordonnées">{{ $customer->email ?: 'Sans e-mail' }}<div class="text-xs text-stone-500">{{ $customer->phone ?: 'Sans téléphone' }}</div></td>
+                                        <form id="customer-update-{{ $customer->id }}" method="POST" action="{{ route('backoffice.customers.update', $customer) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <td data-label="Client"><input type="text" name="name" value="{{ $customer->name }}" class="input w-full" required></td>
+                                            <td data-label="Code GGN"><input type="text" name="reference_code" value="{{ $customer->reference_code }}" class="input w-full"></td>
+                                            <td data-label="Contact"><input type="text" name="contact_name" value="{{ $customer->contact_name }}" class="input w-full"></td>
+                                            <td data-label="Coordonnées" class="space-y-2">
+                                                <input type="email" name="email" value="{{ $customer->email }}" placeholder="E-mail" class="input w-full">
+                                                <input type="text" name="phone" value="{{ $customer->phone }}" placeholder="Téléphone" class="input w-full">
+                                            </td>
+                                            <td data-label="Notes"><textarea name="notes" rows="3" class="textarea w-full">{{ $customer->notes }}</textarea></td>
+                                            <td data-label="Statut">
+                                                <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                    <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($customer->is_active)>
+                                                    Actif
+                                                </label>
+                                                <div class="mt-2 text-xs text-stone-500">{{ $customer->orders_count }} commande(s)</div>
+                                            </td>
+                                        </form>
+                                        <td data-label="Actions">
+                                            <div class="flex flex-col gap-2">
+                                                <button form="customer-update-{{ $customer->id }}" class="btn-primary">Enregistrer</button>
+                                                <form method="POST" action="{{ route('backoffice.customers.destroy', $customer) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn-danger w-full" onclick="return confirm('Supprimer ce client ?');">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="px-4 py-6 text-center text-stone-500">Aucun client référencé.</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-6 text-center text-stone-500">Aucun client référencé.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -105,20 +133,44 @@
                                 <tr>
                                     <th>Fournisseur</th>
                                     <th>GGN</th>
-                                    <th>E-mail</th>
-                                    <th>Téléphone</th>
+                                    <th>Coordonnées</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-stone-100 bg-white">
                                 @forelse ($suppliers as $supplier)
                                     <tr>
-                                        <td data-label="Fournisseur" class="font-semibold text-stone-800">{{ $supplier->name }}</td>
-                                        <td data-label="GGN">{{ $supplier->ggn_code }}</td>
-                                        <td data-label="E-mail">{{ $supplier->email ?: 'Non renseigné' }}</td>
-                                        <td data-label="Téléphone">{{ $supplier->phone ?: 'Non renseigné' }}</td>
+                                        <form id="supplier-update-{{ $supplier->id }}" method="POST" action="{{ route('backoffice.suppliers.update', $supplier) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <td data-label="Fournisseur"><input type="text" name="name" value="{{ $supplier->name }}" class="input w-full" required></td>
+                                            <td data-label="GGN"><input type="text" name="ggn_code" value="{{ $supplier->ggn_code }}" class="input w-full" required></td>
+                                            <td data-label="Coordonnées" class="space-y-2">
+                                                <input type="email" name="email" value="{{ $supplier->email }}" placeholder="E-mail" class="input w-full">
+                                                <input type="text" name="phone" value="{{ $supplier->phone }}" placeholder="Téléphone" class="input w-full">
+                                            </td>
+                                            <td data-label="Statut">
+                                                <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                    <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($supplier->is_active)>
+                                                    Actif
+                                                </label>
+                                                <div class="mt-2 text-xs text-stone-500">{{ $supplier->receptions_count }} reception(s)</div>
+                                            </td>
+                                        </form>
+                                        <td data-label="Actions">
+                                            <div class="flex flex-col gap-2">
+                                                <button form="supplier-update-{{ $supplier->id }}" class="btn-primary">Enregistrer</button>
+                                                <form method="POST" action="{{ route('backoffice.suppliers.destroy', $supplier) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn-danger w-full" onclick="return confirm('Supprimer ce fournisseur ?');">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="px-4 py-6 text-center text-stone-500">Aucun fournisseur enregistré.</td></tr>
+                                    <tr><td colspan="5" class="px-4 py-6 text-center text-stone-500">Aucun fournisseur enregistré.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -149,21 +201,114 @@
                             <button class="btn-primary">Ajouter</button>
                         </form>
                         <div class="border border-stone-200 p-4 lg:col-span-2">
-                            <div class="font-semibold text-stone-800">Liste structurée</div>
-                            <div class="mt-4 space-y-4 text-sm text-stone-700">
-                                @foreach ($fruits as $fruit)
-                                    <div>
-                                        <div class="font-semibold text-stone-900">{{ $fruit->name }}</div>
-                                        <div class="text-stone-600">{{ $fruit->varieties->pluck('name')->join(', ') ?: 'Aucune variété' }}</div>
-                                    </div>
-                                @endforeach
+                            <div class="font-semibold text-stone-800">Liste fruits</div>
+                            <div class="mt-4 overflow-x-auto">
+                                <table class="data-table tablet-stack">
+                                    <thead>
+                                        <tr>
+                                            <th>Fruit</th>
+                                            <th>Statut</th>
+                                            <th>Usage</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-stone-100 bg-white">
+                                        @forelse ($fruits as $fruit)
+                                            <tr>
+                                                <form id="fruit-update-{{ $fruit->id }}" method="POST" action="{{ route('backoffice.fruits.update', $fruit) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <td data-label="Fruit"><input type="text" name="name" value="{{ $fruit->name }}" class="input w-full" required></td>
+                                                    <td data-label="Statut">
+                                                        <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                            <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($fruit->is_active)>
+                                                            Actif
+                                                        </label>
+                                                    </td>
+                                                    <td data-label="Usage" class="text-xs text-stone-500">{{ $fruit->varieties_count }} variété(s) · {{ $fruit->calibers_count }} calibre(s) · {{ $fruit->receptions_count }} reception(s)</td>
+                                                </form>
+                                                <td data-label="Actions">
+                                                    <div class="flex flex-col gap-2">
+                                                        <button form="fruit-update-{{ $fruit->id }}" class="btn-secondary">Enregistrer</button>
+                                                        <form method="POST" action="{{ route('backoffice.fruits.destroy', $fruit) }}">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="btn-danger w-full" onclick="return confirm('Supprimer ce fruit ?');">Supprimer</button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="4" class="px-4 py-6 text-center text-stone-500">Aucun fruit référencé.</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="border border-stone-200 p-4 lg:col-span-2">
+                            <div class="font-semibold text-stone-800">Liste variétés</div>
+                            <div class="mt-4 overflow-x-auto">
+                                <table class="data-table tablet-stack">
+                                    <thead>
+                                        <tr>
+                                            <th>Fruit</th>
+                                            <th>Variété</th>
+                                            <th>Statut</th>
+                                            <th>Usage</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-stone-100 bg-white">
+                                        @php($hasVarieties = $fruits->sum(fn ($fruit) => $fruit->varieties->count()) > 0)
+                                        @forelse ($fruits as $fruit)
+                                            @foreach ($fruit->varieties as $variety)
+                                                <tr>
+                                                    <form id="variety-update-{{ $variety->id }}" method="POST" action="{{ route('backoffice.varieties.update', $variety) }}">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <td data-label="Fruit">
+                                                            <select name="fruit_id" class="input w-full" required>
+                                                                @foreach ($fruits as $fruitOption)
+                                                                    <option value="{{ $fruitOption->id }}" @selected($variety->fruit_id === $fruitOption->id)>{{ $fruitOption->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td data-label="Variété"><input type="text" name="name" value="{{ $variety->name }}" class="input w-full" required></td>
+                                                        <td data-label="Statut">
+                                                            <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                                <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($variety->is_active)>
+                                                                Active
+                                                            </label>
+                                                        </td>
+                                                        <td data-label="Usage" class="text-xs text-stone-500">{{ $variety->receptions()->count() }} reception(s)</td>
+                                                    </form>
+                                                    <td data-label="Actions">
+                                                        <div class="flex flex-col gap-2">
+                                                            <button form="variety-update-{{ $variety->id }}" class="btn-secondary">Enregistrer</button>
+                                                            <form method="POST" action="{{ route('backoffice.varieties.destroy', $variety) }}">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button class="btn-danger w-full" onclick="return confirm('Supprimer cette variété ?');">Supprimer</button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @empty
+                                        @endforelse
+                                        @unless($hasVarieties)
+                                            <tr><td colspan="5" class="px-4 py-6 text-center text-stone-500">Aucune variété référencée.</td></tr>
+                                        @endunless
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </article>
 
                 <article class="surface rounded-2xl">
-                    <div class="surface-header"><h2 class="font-display text-2xl text-[var(--castaneas-ink)]">Calibres</h2></div>
+                    <div class="surface-header"><h2 class="font-display text-2xl text-[var(--castaneas-ink)]">Calibres et tares</h2></div>
                     <div class="surface-body space-y-6">
                         <div class="grid gap-6 lg:grid-cols-2">
                             <form method="POST" action="{{ route('backoffice.calibers.store') }}" class="space-y-3 border border-stone-200 p-4 lg:col-span-2">
@@ -179,9 +324,111 @@
                                 <input type="number" name="sort_order" min="1" value="1" class="input w-full" required>
                                 <button class="btn-primary">Ajouter</button>
                             </form>
+                            <form method="POST" action="{{ route('backoffice.tare-types.store') }}" class="space-y-3 border border-stone-200 p-4 lg:col-span-2">
+                                @csrf
+                                <div class="font-semibold text-stone-800">Ajouter une tare</div>
+                                <input type="text" name="label" placeholder="Libellé de tare" class="input w-full" required>
+                                <input type="number" name="weight_kg" step="0.001" min="0" value="0" class="input w-full" required>
+                                <button class="btn-primary">Ajouter</button>
+                            </form>
                         </div>
                         <div class="grid gap-6 text-sm text-stone-700">
-                            <div class="border border-stone-200 p-4"><div class="font-semibold text-stone-800">Calibres actifs</div><div class="mt-3 space-y-2">@foreach ($calibers as $caliber)<div>{{ $caliber->fruit?->name }} - {{ $caliber->name }}</div>@endforeach</div></div>
+                            <div class="overflow-x-auto border border-stone-200">
+                                <table class="data-table tablet-stack">
+                                    <thead>
+                                        <tr>
+                                            <th>Fruit</th>
+                                            <th>Calibre</th>
+                                            <th>Ordre</th>
+                                            <th>Statut</th>
+                                            <th>Usage</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-stone-100 bg-white">
+                                        @forelse ($calibers as $caliber)
+                                            <tr>
+                                                <form id="caliber-update-{{ $caliber->id }}" method="POST" action="{{ route('backoffice.calibers.update', $caliber) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <td data-label="Fruit">
+                                                        <select name="fruit_id" class="input w-full" required>
+                                                            @foreach ($fruits as $fruit)
+                                                                <option value="{{ $fruit->id }}" @selected($caliber->fruit_id === $fruit->id)>{{ $fruit->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </td>
+                                                    <td data-label="Calibre"><input type="text" name="name" value="{{ $caliber->name }}" class="input w-full" required></td>
+                                                    <td data-label="Ordre"><input type="number" name="sort_order" min="1" value="{{ $caliber->sort_order }}" class="input w-full" required></td>
+                                                    <td data-label="Statut">
+                                                        <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                            <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($caliber->is_active)>
+                                                            Actif
+                                                        </label>
+                                                    </td>
+                                                    <td data-label="Usage" class="text-xs text-stone-500">{{ $caliber->calibrations_count }} calibrage(s)</td>
+                                                </form>
+                                                <td data-label="Actions">
+                                                    <div class="flex flex-col gap-2">
+                                                        <button form="caliber-update-{{ $caliber->id }}" class="btn-secondary">Enregistrer</button>
+                                                        <form method="POST" action="{{ route('backoffice.calibers.destroy', $caliber) }}">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="btn-danger w-full" onclick="return confirm('Supprimer ce calibre ?');">Supprimer</button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="6" class="px-4 py-6 text-center text-stone-500">Aucun calibre référencé.</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="overflow-x-auto border border-stone-200">
+                                <table class="data-table tablet-stack">
+                                    <thead>
+                                        <tr>
+                                            <th>Libellé</th>
+                                            <th>Poids (kg)</th>
+                                            <th>Statut</th>
+                                            <th>Usage</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-stone-100 bg-white">
+                                        @forelse ($tareTypes as $tareType)
+                                            <tr>
+                                                <form id="tare-update-{{ $tareType->id }}" method="POST" action="{{ route('backoffice.tare-types.update', $tareType) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <td data-label="Libellé"><input type="text" name="label" value="{{ $tareType->label }}" class="input w-full" required></td>
+                                                    <td data-label="Poids (kg)"><input type="number" name="weight_kg" step="0.001" min="0" value="{{ number_format((float) $tareType->weight_kg, 3, '.', '') }}" class="input w-full" required></td>
+                                                    <td data-label="Statut">
+                                                        <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                            <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($tareType->is_active)>
+                                                            Active
+                                                        </label>
+                                                    </td>
+                                                    <td data-label="Usage" class="text-xs text-stone-500">{{ $tareType->calibrations_count }} calibrage(s)</td>
+                                                </form>
+                                                <td data-label="Actions">
+                                                    <div class="flex flex-col gap-2">
+                                                        <button form="tare-update-{{ $tareType->id }}" class="btn-secondary">Enregistrer</button>
+                                                        <form method="POST" action="{{ route('backoffice.tare-types.destroy', $tareType) }}">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="btn-danger w-full" onclick="return confirm('Supprimer cette tare ?');">Supprimer</button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="5" class="px-4 py-6 text-center text-stone-500">Aucune tare référencée.</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </article>
@@ -215,16 +462,44 @@
                                     <th>Nom</th>
                                     <th>E-mail</th>
                                     <th>Rôle</th>
+                                    <th>Mot de passe</th>
                                     <th>Statut</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-stone-100 bg-white">
                                 @foreach ($users as $user)
                                     <tr>
-                                        <td data-label="Nom" class="font-semibold text-stone-800">{{ $user->name }}</td>
-                                        <td data-label="E-mail">{{ $user->email }}</td>
-                                        <td data-label="Rôle">{{ $user->roles->pluck('name')->join(', ') ?: 'Sans rôle' }}</td>
-                                        <td data-label="Statut">{{ $user->is_active ? 'Actif' : 'Inactif' }}</td>
+                                        <form id="user-update-{{ $user->id }}" method="POST" action="{{ route('backoffice.users.update', $user) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <td data-label="Nom"><input type="text" name="name" value="{{ $user->name }}" class="input w-full" required></td>
+                                            <td data-label="E-mail"><input type="email" name="email" value="{{ $user->email }}" class="input w-full" required></td>
+                                            <td data-label="Rôle">
+                                                <select name="role" class="input w-full" required>
+                                                    @foreach ($roles as $role)
+                                                        <option value="{{ $role->name }}" @selected($user->roles->pluck('name')->contains($role->name))>{{ $role->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td data-label="Mot de passe"><input type="password" name="password" placeholder="Laisser vide pour conserver" class="input w-full"></td>
+                                            <td data-label="Statut">
+                                                <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                    <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($user->is_active)>
+                                                    Actif
+                                                </label>
+                                            </td>
+                                        </form>
+                                        <td data-label="Actions">
+                                            <div class="flex flex-col gap-2">
+                                                <button form="user-update-{{ $user->id }}" class="btn-primary">Enregistrer</button>
+                                                <form method="POST" action="{{ route('backoffice.users.destroy', $user) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn-danger w-full disabled:cursor-not-allowed disabled:opacity-50" onclick="return confirm('Supprimer cet utilisateur ?');" @disabled(auth()->id() === $user->id)>Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caliber;
+use App\Models\Calibration;
 use App\Models\Customer;
+use App\Models\CustomerOrder;
 use App\Models\Fruit;
+use App\Models\Palox;
+use App\Models\Reception;
 use App\Models\Supplier;
+use App\Models\TareType;
 use App\Models\User;
 use App\Models\Variety;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 use Illuminate\View\View;
@@ -30,10 +36,11 @@ class BackofficeController extends Controller
         }
 
         return view('modules.backoffice.index', [
-            'customers' => Customer::query()->orderBy('name')->get(),
-            'fruits' => Fruit::query()->with('varieties')->orderBy('name')->get(),
-            'suppliers' => Supplier::query()->orderBy('name')->get(),
-            'calibers' => Caliber::query()->with('fruit')->orderBy('sort_order')->get(),
+            'customers' => Customer::query()->withCount('orders')->orderBy('name')->get(),
+            'fruits' => Fruit::query()->with(['varieties', 'calibers'])->withCount(['receptions', 'varieties', 'calibers'])->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->withCount('receptions')->orderBy('name')->get(),
+            'calibers' => Caliber::query()->with('fruit')->withCount('calibrations')->orderBy('sort_order')->get(),
+            'tareTypes' => TareType::query()->withCount('calibrations')->orderBy('label')->get(),
             'users' => User::query()->with('roles')->orderBy('name')->get(),
             'roles' => Role::query()->orderBy('name')->get(),
             'activities' => $activityQuery->paginate(20)->withQueryString(),
@@ -42,80 +49,177 @@ class BackofficeController extends Controller
 
     public function storeCustomer(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'reference_code' => ['nullable', 'string', 'max:255', 'unique:customers,reference_code'],
-            'contact_name' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'notes' => ['nullable', 'string'],
-        ], [], [
-            'reference_code' => 'code GGN client',
-        ]);
+        $validated = $this->validateCustomer($request);
 
         Customer::query()->create($validated + ['is_active' => true]);
 
         return redirect()->route('backoffice.index', ['section' => 'clients'])->with('status', 'Client ajoute.');
     }
 
+    public function updateCustomer(Request $request, Customer $customer): RedirectResponse
+    {
+        $validated = $this->validateCustomer($request, $customer);
+
+        $customer->update($validated + ['is_active' => $request->boolean('is_active')]);
+
+        return $this->redirectToSection('clients', 'Client mis a jour.');
+    }
+
+    public function destroyCustomer(Customer $customer): RedirectResponse
+    {
+        $customer->delete();
+
+        return $this->redirectToSection('clients', 'Client supprime.');
+    }
+
     public function storeFruit(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:fruits,name'],
-        ]);
+        $validated = $this->validateFruit($request);
 
         Fruit::query()->create($validated + ['is_active' => true]);
 
         return redirect()->route('backoffice.index', ['section' => 'production'])->with('status', 'Fruit ajoute.');
     }
 
+    public function updateFruit(Request $request, Fruit $fruit): RedirectResponse
+    {
+        $validated = $this->validateFruit($request, $fruit);
+
+        $fruit->update($validated + ['is_active' => $request->boolean('is_active')]);
+
+        return $this->redirectToSection('production', 'Fruit mis a jour.');
+    }
+
+    public function destroyFruit(Fruit $fruit): RedirectResponse
+    {
+        if ($fruit->receptions()->exists() || $fruit->varieties()->exists() || $fruit->calibers()->exists()) {
+            return $this->redirectToSection('production', 'Suppression impossible: ce fruit est deja utilise dans la production.');
+        }
+
+        $fruit->delete();
+
+        return $this->redirectToSection('production', 'Fruit supprime.');
+    }
+
     public function storeVariety(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'fruit_id' => ['required', 'exists:fruits,id'],
-            'name' => ['required', 'string', 'max:255'],
-        ]);
+        $validated = $this->validateVariety($request);
 
         Variety::query()->create($validated + ['is_active' => true]);
 
         return redirect()->route('backoffice.index', ['section' => 'production'])->with('status', 'Variete ajoutee.');
     }
 
+    public function updateVariety(Request $request, Variety $variety): RedirectResponse
+    {
+        $validated = $this->validateVariety($request, $variety);
+
+        $variety->update($validated + ['is_active' => $request->boolean('is_active')]);
+
+        return $this->redirectToSection('production', 'Variete mise a jour.');
+    }
+
+    public function destroyVariety(Variety $variety): RedirectResponse
+    {
+        if ($variety->receptions()->exists()) {
+            return $this->redirectToSection('production', 'Suppression impossible: cette variete est deja utilisee en reception.');
+        }
+
+        $variety->delete();
+
+        return $this->redirectToSection('production', 'Variete supprimee.');
+    }
+
     public function storeSupplier(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'ggn_code' => ['required', 'string', 'max:255', 'unique:suppliers,ggn_code'],
-            'email' => ['nullable', 'email'],
-            'phone' => ['nullable', 'string', 'max:30'],
-        ]);
+        $validated = $this->validateSupplier($request);
 
         Supplier::query()->create($validated + ['is_active' => true]);
 
         return redirect()->route('backoffice.index', ['section' => 'fournisseurs'])->with('status', 'Fournisseur ajoute.');
     }
 
+    public function updateSupplier(Request $request, Supplier $supplier): RedirectResponse
+    {
+        $validated = $this->validateSupplier($request, $supplier);
+
+        $supplier->update($validated + ['is_active' => $request->boolean('is_active')]);
+
+        return $this->redirectToSection('fournisseurs', 'Fournisseur mis a jour.');
+    }
+
+    public function destroySupplier(Supplier $supplier): RedirectResponse
+    {
+        if ($supplier->receptions()->exists()) {
+            return $this->redirectToSection('fournisseurs', 'Suppression impossible: ce fournisseur est deja utilise en reception.');
+        }
+
+        $supplier->delete();
+
+        return $this->redirectToSection('fournisseurs', 'Fournisseur supprime.');
+    }
+
     public function storeCaliber(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'fruit_id' => ['required', 'exists:fruits,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'sort_order' => ['required', 'integer', 'min:1'],
-        ]);
+        $validated = $this->validateCaliber($request);
 
         Caliber::query()->create($validated + ['is_active' => true]);
 
         return redirect()->route('backoffice.index', ['section' => 'production'])->with('status', 'Calibre ajoute.');
     }
 
+    public function updateCaliber(Request $request, Caliber $caliber): RedirectResponse
+    {
+        $validated = $this->validateCaliber($request, $caliber);
+
+        $caliber->update($validated + ['is_active' => $request->boolean('is_active')]);
+
+        return $this->redirectToSection('production', 'Calibre mis a jour.');
+    }
+
+    public function destroyCaliber(Caliber $caliber): RedirectResponse
+    {
+        if ($caliber->calibrations()->exists()) {
+            return $this->redirectToSection('production', 'Suppression impossible: ce calibre est deja utilise en calibrage.');
+        }
+
+        $caliber->delete();
+
+        return $this->redirectToSection('production', 'Calibre supprime.');
+    }
+
+    public function storeTareType(Request $request): RedirectResponse
+    {
+        $validated = $this->validateTareType($request);
+
+        TareType::query()->create($validated + ['is_active' => true]);
+
+        return $this->redirectToSection('production', 'Tare ajoutee.');
+    }
+
+    public function updateTareType(Request $request, TareType $tareType): RedirectResponse
+    {
+        $validated = $this->validateTareType($request, $tareType);
+
+        $tareType->update($validated + ['is_active' => $request->boolean('is_active')]);
+
+        return $this->redirectToSection('production', 'Tare mise a jour.');
+    }
+
+    public function destroyTareType(TareType $tareType): RedirectResponse
+    {
+        if ($tareType->calibrations()->exists()) {
+            return $this->redirectToSection('production', 'Suppression impossible: cette tare est deja utilisee en calibrage.');
+        }
+
+        $tareType->delete();
+
+        return $this->redirectToSection('production', 'Tare supprimee.');
+    }
+
     public function storeUser(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', 'exists:roles,name'],
-        ]);
+        $validated = $this->validateUser($request, true);
 
         $user = User::query()->create([
             'name' => $validated['name'],
@@ -127,5 +231,137 @@ class BackofficeController extends Controller
         $user->syncRoles([$validated['role']]);
 
         return redirect()->route('backoffice.index', ['section' => 'utilisateurs'])->with('status', 'Utilisateur ajoute.');
+    }
+
+    public function updateUser(Request $request, User $user): RedirectResponse
+    {
+        $validated = $this->validateUser($request, false, $user);
+
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        if (! empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+        $user->syncRoles([$validated['role']]);
+
+        return $this->redirectToSection('utilisateurs', 'Utilisateur mis a jour.');
+    }
+
+    public function destroyUser(User $user): RedirectResponse
+    {
+        if ((int) $user->id === (int) auth()->id()) {
+            return $this->redirectToSection('utilisateurs', 'Suppression impossible: vous ne pouvez pas supprimer votre propre compte.');
+        }
+
+        if (
+            Reception::query()->where('received_by', $user->id)->exists()
+            || Calibration::query()->where('performed_by', $user->id)->exists()
+            || Palox::query()->where('created_by', $user->id)->exists()
+            || CustomerOrder::query()->where('created_by', $user->id)->exists()
+        ) {
+            return $this->redirectToSection('utilisateurs', 'Suppression impossible: cet utilisateur est deja lie a des operations historiques.');
+        }
+
+        $user->delete();
+
+        return $this->redirectToSection('utilisateurs', 'Utilisateur supprime.');
+    }
+
+    private function redirectToSection(string $section, string $message): RedirectResponse
+    {
+        return redirect()->route('backoffice.index', ['section' => $section])->with('status', $message);
+    }
+
+    private function validateCustomer(Request $request, ?Customer $customer = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'reference_code' => ['nullable', 'string', 'max:255', Rule::unique('customers', 'reference_code')->ignore($customer?->id)],
+            'contact_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'notes' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
+        ], [], [
+            'reference_code' => 'code GGN client',
+        ]);
+    }
+
+    private function validateFruit(Request $request, ?Fruit $fruit = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('fruits', 'name')->ignore($fruit?->id)],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+    }
+
+    private function validateVariety(Request $request, ?Variety $variety = null): array
+    {
+        return $request->validate([
+            'fruit_id' => ['required', 'exists:fruits,id'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('varieties', 'name')
+                    ->where(fn ($query) => $query->where('fruit_id', $request->integer('fruit_id')))
+                    ->ignore($variety?->id),
+            ],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+    }
+
+    private function validateSupplier(Request $request, ?Supplier $supplier = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'ggn_code' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'ggn_code')->ignore($supplier?->id)],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+    }
+
+    private function validateCaliber(Request $request, ?Caliber $caliber = null): array
+    {
+        return $request->validate([
+            'fruit_id' => ['required', 'exists:fruits,id'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('calibers', 'name')
+                    ->where(fn ($query) => $query->where('fruit_id', $request->integer('fruit_id')))
+                    ->ignore($caliber?->id),
+            ],
+            'sort_order' => ['required', 'integer', 'min:1'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+    }
+
+    private function validateTareType(Request $request, ?TareType $tareType = null): array
+    {
+        return $request->validate([
+            'label' => ['required', 'string', 'max:255', Rule::unique('tare_types', 'label')->ignore($tareType?->id)],
+            'weight_kg' => ['required', 'numeric', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+    }
+
+    private function validateUser(Request $request, bool $creating = true, ?User $user = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'password' => [$creating ? 'required' : 'nullable', 'string', 'min:8'],
+            'role' => ['required', 'exists:roles,name'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
     }
 }
