@@ -61,10 +61,7 @@
                     <td colspan="2" class="full"><span class="label-name">Date :</span> {{ $palox->labeled_at->format('d/m/Y H:i') }}</td>
                 </tr>
                 <tr>
-                    <td colspan="2" class="full"><span class="label-name">Fournisseur :</span> {{ $palox->reception->supplier->name }}</td>
-                </tr>
-                <tr>
-                    <td colspan="2" class="full"><span class="label-name">GGN :</span> {{ $palox->reception->supplier->ggn_code }}</td>
+                    <td colspan="2" class="full"><span class="label-name">ID fournisseur :</span> {{ $palox->reception->supplier->supplier_code }}</td>
                 </tr>
                 <tr>
                     <td><span class="label-name">Variété :</span> {{ $palox->reception->variety->name }}</td>

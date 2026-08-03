@@ -39,7 +39,7 @@
                     <tbody class="divide-y divide-stone-100 bg-white">
                         @forelse ($calibrations as $calibration)
                             <tr>
-                                <td data-label="Réception">{{ $calibration->reception->reception_number }}<div class="text-xs text-stone-500">{{ $calibration->reception->supplier->name }} - {{ $calibration->reception->variety->name }}</div></td>
+                                <td data-label="Réception">{{ $calibration->reception->reception_number }}<div class="text-xs text-stone-500">{{ $calibration->reception->supplier->supplier_code }} - {{ $calibration->reception->variety->name }}</div></td>
                                 <td data-label="Calibre">{{ $calibration->caliber->name }}</td>
                                 <td data-label="Poids">{{ number_format((float) $calibration->net_weight_kg, 3, ',', ' ') }} kg<div class="text-xs text-stone-500">Déchet: {{ number_format((float) $calibration->waste_weight_kg, 3, ',', ' ') }} kg</div></td>
                                 <td data-label="Palox">{{ $calibration->palox?->palox_number }}</td>

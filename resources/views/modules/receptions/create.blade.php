@@ -21,7 +21,7 @@
                     <select id="supplier_id" name="supplier_id" class="input mt-1 block w-full" required>
                         <option value="">Sélectionner</option>
                         @foreach ($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}" data-ggn="{{ $supplier->ggn_code }}" @selected((string) old('supplier_id') === (string) $supplier->id)>{{ $supplier->name }} - {{ $supplier->ggn_code }}</option>
+                            <option value="{{ $supplier->id }}" @selected((string) old('supplier_id') === (string) $supplier->id)>{{ $supplier->supplier_code }}</option>
                         @endforeach
                     </select>
                     <x-input-error class="mt-2" :messages="$errors->get('supplier_id')" />

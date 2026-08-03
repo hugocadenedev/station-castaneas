@@ -37,7 +37,6 @@
                         <form method="POST" action="{{ route('backoffice.customers.store') }}" class="space-y-4">
                             @csrf
                             <input type="text" name="name" placeholder="Nom du client" class="input w-full" required>
-                            <input type="text" name="reference_code" placeholder="Code GGN client (saisie manuelle)" class="input w-full">
                             <input type="text" name="contact_name" placeholder="Contact" class="input w-full">
                             <input type="email" name="email" placeholder="E-mail" class="input w-full">
                             <input type="text" name="phone" placeholder="Téléphone" class="input w-full">
@@ -57,7 +56,6 @@
                             <thead>
                                 <tr>
                                     <th>Client</th>
-                                    <th>Code GGN</th>
                                     <th>Contact</th>
                                     <th>Coordonnées</th>
                                     <th>Notes</th>
@@ -72,7 +70,6 @@
                                             @csrf
                                             @method('PATCH')
                                             <td data-label="Client"><input type="text" name="name" value="{{ $customer->name }}" class="input w-full" required></td>
-                                            <td data-label="Code GGN"><input type="text" name="reference_code" value="{{ $customer->reference_code }}" class="input w-full"></td>
                                             <td data-label="Contact"><input type="text" name="contact_name" value="{{ $customer->contact_name }}" class="input w-full"></td>
                                             <td data-label="Coordonnées" class="space-y-2">
                                                 <input type="email" name="email" value="{{ $customer->email }}" placeholder="E-mail" class="input w-full">
@@ -99,7 +96,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="7" class="px-4 py-6 text-center text-stone-500">Aucun client référencé.</td></tr>
+                                    <tr><td colspan="6" class="px-4 py-6 text-center text-stone-500">Aucun client référencé.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -114,7 +111,8 @@
                         <form method="POST" action="{{ route('backoffice.suppliers.store') }}" class="space-y-4">
                             @csrf
                             <input type="text" name="name" placeholder="Nom" class="input w-full" required>
-                            <input type="text" name="ggn_code" placeholder="Code GGN" class="input w-full" required>
+                            <input type="text" name="supplier_code" placeholder="ID fournisseur (saisie manuelle)" class="input w-full" required>
+                            <input type="text" name="ggn_code" placeholder="Numéro GGN" class="input w-full" required>
                             <input type="email" name="email" placeholder="E-mail" class="input w-full">
                             <input type="text" name="phone" placeholder="Téléphone" class="input w-full">
                             <button class="btn-primary">Ajouter le fournisseur</button>
@@ -125,13 +123,14 @@
                 <article class="surface overflow-hidden rounded-2xl">
                     <div class="surface-header flex items-center justify-between gap-3">
                         <h2 class="font-display text-2xl text-[var(--castaneas-ink)]">Liste fournisseurs</h2>
-                        <div class="text-sm text-stone-500">Référentiel réception et traçabilité GGN</div>
+                        <div class="text-sm text-stone-500">Référentiel fournisseur avec ID manuel et numéro GGN distinct</div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="data-table tablet-stack">
                             <thead>
                                 <tr>
                                     <th>Fournisseur</th>
+                                    <th>ID fournisseur</th>
                                     <th>GGN</th>
                                     <th>Coordonnées</th>
                                     <th>Statut</th>
@@ -145,6 +144,7 @@
                                             @csrf
                                             @method('PATCH')
                                             <td data-label="Fournisseur"><input type="text" name="name" value="{{ $supplier->name }}" class="input w-full" required></td>
+                                            <td data-label="ID fournisseur"><input type="text" name="supplier_code" value="{{ $supplier->supplier_code }}" class="input w-full" required></td>
                                             <td data-label="GGN"><input type="text" name="ggn_code" value="{{ $supplier->ggn_code }}" class="input w-full" required></td>
                                             <td data-label="Coordonnées" class="space-y-2">
                                                 <input type="email" name="email" value="{{ $supplier->email }}" placeholder="E-mail" class="input w-full">
@@ -170,7 +170,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="5" class="px-4 py-6 text-center text-stone-500">Aucun fournisseur enregistré.</td></tr>
+                                    <tr><td colspan="6" class="px-4 py-6 text-center text-stone-500">Aucun fournisseur enregistré.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

@@ -15,8 +15,7 @@
         <div class="title">Réception Castaneas</div>
         <div class="row"><strong>Date :</strong> {{ $reception->received_at->format('d/m/Y H:i') }}</div>
         <div class="row"><strong>N° réception :</strong> {{ $reception->reception_number }}</div>
-        <div class="row"><strong>Fournisseur :</strong> {{ $reception->supplier->name }}</div>
-        <div class="row"><strong>GGN :</strong> {{ $reception->supplier->ggn_code }}</div>
+        <div class="row"><strong>ID fournisseur :</strong> {{ $reception->supplier->supplier_code }}</div>
         <div class="row"><strong>Fruit :</strong> {{ $reception->fruit->name }}</div>
         <div class="row"><strong>Variété :</strong> {{ $reception->variety->name }}</div>
         <div class="row"><strong>Poids brut :</strong> {{ number_format((float) $reception->gross_weight_kg, 3, ',', ' ') }} kg</div>

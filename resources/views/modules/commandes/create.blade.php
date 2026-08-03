@@ -7,7 +7,7 @@
             return [
                 'id' => (string) $palox->id,
                 'number' => $palox->palox_number,
-                'supplier' => $palox->reception->supplier->name,
+                'supplier' => $palox->reception->supplier->supplier_code,
                 'fruit' => $palox->reception->fruit->name,
                 'variety' => $palox->reception->variety->name,
                 'caliber' => $palox->calibration->caliber->name,
@@ -16,7 +16,7 @@
                 'initialWeight' => number_format((float) $palox->initial_net_weight_kg, 3, ',', ' '),
                 'status' => $statusLabel,
                 'statusClass' => $palox->availability_status === 'partial' ? 'pill pill-warn' : 'pill pill-ok',
-                'details' => $palox->reception->supplier->name.' - '.$palox->reception->fruit->name.' / '.$palox->reception->variety->name.' - calibre '.$palox->calibration->caliber->name.' - '.$statusLabel,
+                'details' => $palox->reception->supplier->supplier_code.' - '.$palox->reception->fruit->name.' / '.$palox->reception->variety->name.' - calibre '.$palox->calibration->caliber->name.' - '.$statusLabel,
             ];
         })->values();
 
@@ -91,7 +91,7 @@
                             <select id="customer_id" name="customer_id" class="input mt-1 block w-full">
                                 <option value="">Client ponctuel / saisie libre</option>
                                 @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>{{ $customer->name }}@if($customer->reference_code) - GGN {{ $customer->reference_code }}@endif</option>
+                                    <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>{{ $customer->name }}</option>
                                 @endforeach
                             </select>
                             <x-input-error class="mt-2" :messages="$errors->get('customer_id')" />

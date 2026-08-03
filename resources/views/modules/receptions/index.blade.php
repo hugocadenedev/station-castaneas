@@ -19,7 +19,7 @@
                     <select name="supplier_id" class="input">
                         <option value="">Tous les fournisseurs</option>
                         @foreach ($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->name }}</option>
+                            <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->supplier_code }}</option>
                         @endforeach
                     </select>
                     <select name="fruit_id" class="input">
@@ -54,7 +54,6 @@
                         <tr>
                             <th>Réception</th>
                             <th>Fournisseur</th>
-                            <th>GGN</th>
                             <th>Fruit</th>
                             <th>Variété</th>
                             <th>Poids</th>
@@ -67,8 +66,7 @@
                         @forelse ($receptions as $reception)
                             <tr>
                                 <td data-label="Réception"><div class="font-semibold text-stone-800">{{ $reception->reception_number }}</div><div class="text-xs text-stone-500">{{ $reception->received_at->format('d/m/Y H:i') }}</div></td>
-                                <td data-label="Fournisseur">{{ $reception->supplier->name }}</td>
-                                <td data-label="GGN">{{ $reception->supplier->ggn_code }}</td>
+                                <td data-label="Fournisseur">{{ $reception->supplier->supplier_code }}</td>
                                 <td data-label="Fruit">{{ $reception->fruit->name }}</td>
                                 <td data-label="Variété">{{ $reception->variety->name }}</td>
                                 <td data-label="Poids">{{ number_format((float) $reception->gross_weight_kg, 3, ',', ' ') }} kg</td>
@@ -84,7 +82,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="9" class="px-4 py-6 text-center text-stone-500">Aucune réception.</td></tr>
+                            <tr><td colspan="8" class="px-4 py-6 text-center text-stone-500">Aucune réception.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

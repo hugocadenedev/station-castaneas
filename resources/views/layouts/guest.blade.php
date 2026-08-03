@@ -32,7 +32,7 @@
                         <span class="pill border-[rgba(125,47,47,0.18)] bg-[rgba(125,47,47,0.06)] text-[var(--castaneas-bordeaux)]">Pilotage atelier</span>
                         <div class="space-y-4">
                             <h1 class="font-display text-5xl leading-tight text-[var(--castaneas-ink)]">Traçabilité complète, de la réception au départ client.</h1>
-                            <p class="max-w-xl text-base leading-7 text-stone-600">Cette base projet prépare les modules Réception, Calibrage, Stock, Commandes et Backoffice avec une authentification interne, des rôles et un schéma de données pensé pour le suivi GGN et palox.</p>
+                            <p class="max-w-xl text-base leading-7 text-stone-600">Cette base projet prépare les modules Réception, Calibrage, Stock, Commandes et Backoffice avec une authentification interne, des rôles et un schéma de données pensé pour la traçabilité fournisseur et palox.</p>
                         </div>
                     </div>
                     <div class="grid gap-4 border-t border-stone-200/80 bg-[rgba(246,240,230,0.6)] p-8 sm:grid-cols-3">

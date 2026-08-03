@@ -56,6 +56,22 @@ git pull
 /opt/alt/php83/usr/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader
 ```
 
+Option recommandee pour les deploiements suivants : utiliser directement le script du repo.
+
+```bash
+cd /home/u362859991/domains/dimgrey-moose-518972.hostingersite.com/public_html/station-castaneas
+sh scripts/deploy-hostinger.sh
+```
+
+Ce script fait automatiquement :
+
+- `git pull`
+- `composer install`
+- la recopie du dossier `public`
+- la restauration du bon `public_html/index.php`
+- les caches Laravel
+- les permissions `storage` et `bootstrap/cache`
+
 ### 4. Recopier le dossier public Laravel dans la racine web
 
 ```bash
@@ -63,6 +79,8 @@ cd /home/u362859991/domains/dimgrey-moose-518972.hostingersite.com/public_html
 cp -r station-castaneas/public/* .
 cp station-castaneas/public/.htaccess .
 ```
+
+Attention: cette copie re-ecrase `public_html/index.php` avec la version Laravel standard. Il faut donc toujours remettre juste apres le `index.php` Hostinger corrige.
 
 ### 5. Verifier le fichier index.php public
 
@@ -87,6 +105,8 @@ $app = require_once __DIR__.'/station-castaneas/bootstrap/app.php';
 
 $app->handleRequest(Request::capture());
 ```
+
+Si besoin, le plus simple est de re-uploader ce fichier ou de le recoller apres chaque recopie du dossier `public`.
 
 ### 6. .htaccess minimal compatible
 
@@ -173,6 +193,7 @@ Correction:
 Cause probable:
 
 - `public_html/index.php` pointait encore vers `../vendor` et `../bootstrap`
+- ou a ete re-ecrase par `cp -r station-castaneas/public/* .`
 
 Correction:
 

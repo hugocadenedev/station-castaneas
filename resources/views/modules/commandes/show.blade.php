@@ -19,7 +19,6 @@
                 <div><strong>Date :</strong><div>{{ $order->ordered_at->format('d/m/Y H:i') }}</div></div>
                 <div><strong>Client :</strong><div>{{ $order->customer?->name ?? $order->client_name }}</div></div>
                 <div><strong>Opérateur :</strong><div>{{ $order->operator->name }}</div></div>
-                <div><strong>Code GGN client :</strong><div>{{ $order->customer?->reference_code ?: 'Non renseigné' }}</div></div>
                 <div><strong>Poids total prélevé :</strong><div>{{ number_format((float) $order->paloxes->sum(fn ($palox) => (float) $palox->pivot->picked_net_weight_kg), 3, ',', ' ') }} kg</div></div>
             </div>
         </section>
@@ -65,7 +64,7 @@
                         @forelse ($order->paloxes as $palox)
                             <tr>
                                 <td data-label="Palox" class="font-semibold text-stone-800">{{ $palox->palox_number }}</td>
-                                <td data-label="Fournisseur">{{ $palox->reception->supplier->name }}</td>
+                                <td data-label="Fournisseur">{{ $palox->reception->supplier->supplier_code }}</td>
                                 <td data-label="Fruit">{{ $palox->reception->fruit->name }}</td>
                                 <td data-label="Variété">{{ $palox->reception->variety->name }}</td>
                                 <td data-label="Calibre">{{ $palox->calibration->caliber->name }}</td>

@@ -16,7 +16,12 @@ class ReferenceNumberService
 
     public function makePaloxNumber(CarbonInterface $labeledAt, int $paloxId): string
     {
-        return sprintf('PAL-%s-%04d', $labeledAt->format('Ymd'), $paloxId);
+        $sequence = Palox::query()
+            ->whereYear('labeled_at', $labeledAt->year)
+            ->where('id', '<=', $paloxId)
+            ->count();
+
+        return sprintf('%s-%03d', $labeledAt->format('y'), $sequence);
     }
 
     public function makeOrderNumber(CarbonInterface $orderedAt, int $orderId): string

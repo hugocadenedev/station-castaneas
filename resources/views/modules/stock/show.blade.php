@@ -13,8 +13,7 @@
             </div>
             <div class="surface-body grid gap-3 text-sm leading-6 text-stone-700 sm:grid-cols-2">
                 <div><strong>Réception :</strong><div>{{ $palox->reception->reception_number }}</div></div>
-                <div><strong>Fournisseur :</strong><div>{{ $palox->reception->supplier->name }}</div></div>
-                <div><strong>GGN :</strong><div>{{ $palox->reception->supplier->ggn_code }}</div></div>
+                <div><strong>ID fournisseur :</strong><div>{{ $palox->reception->supplier->supplier_code }}</div></div>
                 <div><strong>Fruit / Variété :</strong><div>{{ $palox->reception->fruit->name }} / {{ $palox->reception->variety->name }}</div></div>
                 <div><strong>Opérateur réception :</strong><div>{{ $palox->reception->operator->name }}</div></div>
                 <div><strong>Calibre :</strong><div>{{ $palox->calibration->caliber->name }}</div></div>

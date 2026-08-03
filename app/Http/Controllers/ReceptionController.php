@@ -47,7 +47,7 @@ class ReceptionController extends Controller
 
         return view('modules.receptions.index', [
             'receptions' => $query->paginate(15)->withQueryString(),
-            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
             'varieties' => Variety::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
@@ -56,7 +56,7 @@ class ReceptionController extends Controller
     public function create(): View
     {
         return view('modules.receptions.create', [
-            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
             'fruits' => Fruit::query()->where('is_active', true)->with(['varieties' => fn ($query) => $query->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
         ]);
     }

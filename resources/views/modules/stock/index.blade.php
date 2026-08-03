@@ -37,7 +37,7 @@
                                         <select id="supplier_id" name="supplier_id" class="input mt-1 w-full">
                                             <option value="">Tous les fournisseurs</option>
                                             @foreach ($suppliers as $supplier)
-                                                <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->name }}</option>
+                                                <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->supplier_code }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -132,7 +132,7 @@
                             @forelse ($paloxes as $palox)
                                 <tr>
                                     <td data-label="Fruit">{{ $palox->reception->fruit->name }}</td>
-                                    <td data-label="Fournisseur">{{ $palox->reception->supplier->name }}</td>
+                                    <td data-label="Fournisseur">{{ $palox->reception->supplier->supplier_code }}</td>
                                     <td data-label="Variété">{{ $palox->reception->variety->name }}</td>
                                     <td data-label="Numéro palox" class="font-semibold text-stone-800">{{ $palox->palox_number }}</td>
                                     <td data-label="Calibre">{{ $palox->calibration->caliber->name }}</td>
@@ -197,7 +197,7 @@
                             @forelse ($nonConformingReceptions as $reception)
                                 <tr>
                                     <td data-label="Réception" class="font-semibold text-stone-800">{{ $reception->reception_number }}</td>
-                                    <td data-label="Origine">{{ $reception->supplier->name }}<div class="text-xs text-stone-500">{{ $reception->fruit->name }} - {{ $reception->variety->name }}</div></td>
+                                    <td data-label="Origine">{{ $reception->supplier->supplier_code }}<div class="text-xs text-stone-500">{{ $reception->fruit->name }} - {{ $reception->variety->name }}</div></td>
                                     <td data-label="Poids brut">{{ number_format((float) $reception->gross_weight_kg, 3, ',', ' ') }} kg</td>
                                     <td data-label="Motif">{{ $reception->non_conformity_reason }}</td>
                                     <td data-label="Actions"><a href="{{ route('receptions.label', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a></td>

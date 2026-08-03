@@ -38,7 +38,7 @@ class BackofficeController extends Controller
         return view('modules.backoffice.index', [
             'customers' => Customer::query()->withCount('orders')->orderBy('name')->get(),
             'fruits' => Fruit::query()->with(['varieties', 'calibers'])->withCount(['receptions', 'varieties', 'calibers'])->orderBy('name')->get(),
-            'suppliers' => Supplier::query()->withCount('receptions')->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->withCount('receptions')->orderBy('supplier_code')->get(),
             'calibers' => Caliber::query()->with('fruit')->withCount('calibrations')->orderBy('sort_order')->get(),
             'tareTypes' => TareType::query()->withCount('calibrations')->orderBy('label')->get(),
             'users' => User::query()->with('roles')->orderBy('name')->get(),
@@ -51,7 +51,7 @@ class BackofficeController extends Controller
     {
         $validated = $this->validateCustomer($request);
 
-        Customer::query()->create($validated + ['is_active' => true]);
+        Customer::query()->create($validated + ['reference_code' => null, 'is_active' => true]);
 
         return redirect()->route('backoffice.index', ['section' => 'clients'])->with('status', 'Client ajoute.');
     }
@@ -60,7 +60,7 @@ class BackofficeController extends Controller
     {
         $validated = $this->validateCustomer($request, $customer);
 
-        $customer->update($validated + ['is_active' => $request->boolean('is_active')]);
+        $customer->update($validated + ['reference_code' => null, 'is_active' => $request->boolean('is_active')]);
 
         return $this->redirectToSection('clients', 'Client mis a jour.');
     }
@@ -282,14 +282,11 @@ class BackofficeController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'reference_code' => ['nullable', 'string', 'max:255', Rule::unique('customers', 'reference_code')->ignore($customer?->id)],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'notes' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
-        ], [], [
-            'reference_code' => 'code GGN client',
         ]);
     }
 
@@ -321,6 +318,7 @@ class BackofficeController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'supplier_code' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'supplier_code')->ignore($supplier?->id)],
             'ggn_code' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'ggn_code')->ignore($supplier?->id)],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],

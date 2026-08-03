@@ -91,7 +91,7 @@ class OperationsFlowTest extends TestCase
 
         $this->assertSame('calibrated', $reception->processing_status);
         $this->assertSame($calibration->id, $palox->calibration_id);
-        $this->assertStringStartsWith('PAL-', $palox->palox_number);
+        $this->assertMatchesRegularExpression('/^\d{2}-\d{3}$/', $palox->palox_number);
         $this->assertSame('available', $palox->availability_status);
     }
 

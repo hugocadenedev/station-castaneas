@@ -45,12 +45,12 @@
                             @foreach ($pendingReceptions as $reception)
                                 <option
                                     value="{{ $reception->id }}"
-                                    data-supplier-name="{{ $reception->supplier->name }}"
+                                    data-supplier-name="{{ $reception->supplier->supplier_code }}"
                                     data-reception-number="{{ $reception->reception_number }}"
                                     data-variety-name="{{ $reception->variety->name }}"
                                     data-fruit-name="{{ $reception->fruit->name }}"
                                     @selected((string) old('reception_id') === (string) $reception->id)
-                                >{{ $reception->reception_number }} - {{ $reception->supplier->name }} - {{ $reception->variety->name }}</option>
+                                >{{ $reception->reception_number }} - {{ $reception->supplier->supplier_code }} - {{ $reception->variety->name }}</option>
                             @endforeach
                         </select>
                         <x-input-error class="mt-2" :messages="$errors->get('reception_id')" />

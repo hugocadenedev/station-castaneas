@@ -72,7 +72,7 @@ class StockController extends Controller
             'paloxes' => $paloxQuery->paginate(15, ['*'], 'palox_page')->withQueryString(),
             'nonConformingReceptions' => $nonConformingQuery->paginate(15, ['*'], 'non_conforming_page')->withQueryString(),
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
-            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
             'varieties' => Variety::query()->where('is_active', true)->orderBy('name')->get(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
         ]);

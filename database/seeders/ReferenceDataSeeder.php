@@ -62,13 +62,14 @@ class ReferenceDataSeeder extends Seeder
         }
 
         foreach ([
-            ['name' => 'GAEC des Hauts Bois', 'ggn_code' => 'GGN-3001234567890'],
-            ['name' => 'Vergers de l\'Aigoual', 'ggn_code' => 'GGN-3001234567891'],
+            ['name' => 'GAEC des Hauts Bois', 'supplier_code' => 'FOU-001', 'ggn_code' => 'GGN-3001234567890'],
+            ['name' => 'Vergers de l\'Aigoual', 'supplier_code' => 'FOU-002', 'ggn_code' => 'GGN-3001234567891'],
         ] as $supplier) {
-            Supplier::query()->firstOrCreate([
+            Supplier::query()->updateOrCreate([
                 'ggn_code' => $supplier['ggn_code'],
             ], [
                 'name' => $supplier['name'],
+                'supplier_code' => $supplier['supplier_code'],
                 'is_active' => true,
             ]);
         }
