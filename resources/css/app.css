@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	[x-cloak] {
+		display: none !important;
+	}
+
+	:root {
+		--castaneas-cream: #f6f0e6;
+		--castaneas-ink: #2d1d17;
+		--castaneas-brown: #6f4128;
+		--castaneas-bordeaux: #7d2f2f;
+		--castaneas-sage: #70866c;
+		--castaneas-amber: #b17a1d;
+		--castaneas-clay: #b44f32;
+		--castaneas-sand: #eadfce;
+		--castaneas-panel: #fffaf4;
+	}
+
+	body {
+		@apply bg-[#f3f1ec] text-stone-900;
+		font-family: 'Manrope', sans-serif;
+		background-image: linear-gradient(180deg, #f6f4ee 0%, #efede7 100%);
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	.font-display {
+		font-family: 'Fraunces', serif;
+	}
+}
+
+@layer components {
+	.shell {
+		@apply mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8;
+	}
+
+	.panel {
+		@apply rounded-2xl border border-stone-200 bg-white shadow-sm;
+	}
+
+	.panel-muted {
+		@apply rounded-2xl border border-stone-200 bg-stone-50;
+	}
+
+	.pill {
+		@apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em];
+	}
+
+	.pill-ok {
+		@apply border-emerald-200 bg-emerald-50 text-emerald-700;
+	}
+
+	.pill-warn {
+		@apply border-amber-200 bg-amber-50 text-amber-700;
+	}
+
+	.pill-alert {
+		@apply border-orange-200 bg-orange-50 text-orange-700;
+	}
+
+	.metric-card {
+		@apply rounded-xl border border-stone-200 bg-white p-4;
+	}
+
+	.module-card {
+		@apply rounded-xl border border-stone-200 bg-white p-4 transition duration-150 hover:border-stone-300;
+	}
+
+	.filter-chip {
+		@apply inline-flex items-center rounded-full border border-stone-300 bg-stone-50 px-3 py-1 text-sm text-stone-700;
+	}
+
+	.app-shell {
+		@apply min-h-screen 2xl:grid 2xl:grid-cols-[260px_minmax(0,1fr)];
+	}
+
+	.app-sidebar {
+		@apply hidden 2xl:sticky 2xl:top-0 2xl:self-start 2xl:flex 2xl:h-screen 2xl:flex-col 2xl:border-r 2xl:border-stone-200 2xl:bg-[#1f1a17] 2xl:text-stone-200;
+	}
+
+	.app-sidebar-section {
+		@apply border-t border-white/10 px-4 py-4;
+	}
+
+	.app-main {
+		@apply min-h-screen;
+	}
+
+	.app-topbar {
+		@apply sticky top-0 z-20 border-b border-stone-200 bg-[#f6f4ee]/95 backdrop-blur;
+	}
+
+	.content-shell {
+		@apply px-4 py-4 sm:px-5 2xl:px-8;
+	}
+
+	.page-header {
+		@apply mb-4 flex flex-col gap-3 border-b border-stone-200 pb-4 2xl:mb-5 2xl:flex-row 2xl:items-end 2xl:justify-between;
+	}
+
+	.surface {
+		@apply border border-stone-200 bg-white;
+	}
+
+	.surface-header {
+		@apply border-b border-stone-200 px-4 py-3 sm:px-5;
+	}
+
+	.surface-body {
+		@apply p-4 sm:p-5;
+	}
+
+	.toolbar {
+		@apply flex flex-col gap-3 border-b border-stone-200 bg-stone-50/70 px-4 py-3 sm:px-5 2xl:flex-row 2xl:items-center;
+	}
+
+	.toolbar-grid {
+		@apply grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5;
+	}
+
+	.input {
+		@apply h-11 rounded-lg border-stone-300 bg-white text-sm shadow-none focus:border-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)];
+	}
+
+	.textarea {
+		@apply rounded-lg border-stone-300 bg-white text-sm shadow-none focus:border-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)];
+	}
+
+	.btn-primary {
+		@apply inline-flex h-11 items-center justify-center rounded-lg bg-[var(--castaneas-brown)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--castaneas-ink)];
+	}
+
+	.btn-secondary {
+		@apply inline-flex h-11 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 transition hover:bg-stone-50;
+	}
+
+	.sidebar-link {
+		@apply flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-stone-300 transition hover:bg-white/10 hover:text-white;
+	}
+
+	.sidebar-link-active {
+		@apply bg-[rgba(255,255,255,0.10)] text-white ring-1 ring-inset ring-white/10;
+	}
+
+	.data-table {
+		@apply min-w-full divide-y divide-stone-200 text-sm;
+	}
+
+	.data-table thead {
+		@apply bg-stone-50 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500;
+	}
+
+	.data-table th {
+		@apply px-4 py-3;
+	}
+
+	.data-table td {
+		@apply px-4 py-3 align-top;
+	}
+
+	.tablet-kpi-grid {
+		@apply grid gap-4 md:grid-cols-2;
+	}
+}
+
+@media (max-width: 1535px) {
+	.tablet-stack thead {
+		display: none;
+	}
+
+	.tablet-stack tbody {
+		display: block;
+		background: transparent;
+	}
+
+	.tablet-stack tbody tr {
+		display: block;
+		border-bottom: 1px solid rgb(231 229 228);
+		padding: 0.9rem 1rem;
+	}
+
+	.tablet-stack tbody tr:last-child {
+		border-bottom: 0;
+	}
+
+	.tablet-stack tbody td {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		border: 0;
+		padding: 0.4rem 0;
+		text-align: right;
+	}
+
+	.tablet-stack tbody td::before {
+		content: attr(data-label);
+		flex: 0 0 42%;
+		text-align: left;
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: rgb(120 113 108);
+	}
+
+	.tablet-stack tbody td[data-label='Actions'] {
+		display: block;
+		padding-top: 0.8rem;
+		text-align: left;
+	}
+
+	.tablet-stack tbody td[data-label='Actions']::before {
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+
+	.tablet-stack tbody td[data-label='Actions'] > * {
+		display: inline-flex;
+		margin-right: 0.75rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.tablet-stack tbody td[data-label='Commande'],
+	.tablet-stack tbody td[data-label='Palox'],
+	.tablet-stack tbody td[data-label='Réception'] {
+		padding-top: 0;
+	}
+
+	.tablet-stack tbody td[data-label='Commande'] .text-xs,
+	.tablet-stack tbody td[data-label='Palox'] .text-xs,
+	.tablet-stack tbody td[data-label='Réception'] .text-xs {
+		margin-top: 0.2rem;
+	}
+
+	.tablet-stack tbody td[data-label='Actions'] form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.tablet-stack tbody td[data-label='Actions'] form input {
+		min-width: 7rem;
+	}
+
+	.tablet-stack tbody td:empty {
+		display: none;
+	}
+}
