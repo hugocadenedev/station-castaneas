@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CalibrationController extends Controller
@@ -23,34 +24,95 @@ class CalibrationController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Calibration::query()
-            ->with(['reception.supplier', 'reception.variety', 'caliber', 'operator', 'palox'])
-            ->latest('calibrated_at');
+        $query = Reception::query()
+            ->with(['supplier', 'fruit', 'variety', 'operator'])
+            ->withCount('paloxes')
+            ->withSum('calibrations', 'net_weight_kg')
+            ->withSum('calibrations', 'waste_weight_kg')
+            ->withMax('calibrations', 'calibrated_at')
+            ->where('processing_status', 'calibrated')
+            ->whereHas('calibrations');
 
         if ($request->filled('reception_number')) {
-            $query->whereHas('reception', fn ($subQuery) => $subQuery->where('reception_number', 'like', '%'.$request->string('reception_number')->value().'%'));
+            $query->where('reception_number', 'like', '%'.$request->string('reception_number')->value().'%');
         }
 
         if ($request->filled('caliber_id')) {
-            $query->where('caliber_id', $request->integer('caliber_id'));
+            $query->whereHas('calibrations', fn ($subQuery) => $subQuery->where('caliber_id', $request->integer('caliber_id')));
         }
 
         return view('modules.calibrages.index', [
-            'calibrations' => $query->paginate(15)->withQueryString(),
+            'receptions' => $query->orderByDesc('calibrations_max_calibrated_at')->paginate(15)->withQueryString(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
+        ]);
+    }
+
+    public function show(Reception $reception): View
+    {
+        abort_unless($reception->processing_status === 'calibrated' && $reception->calibrations()->exists(), 404);
+
+        return view('modules.calibrages.show', [
+            'reception' => $reception->load([
+                'supplier',
+                'fruit',
+                'variety',
+                'operator',
+                'paloxes.creator',
+                'paloxes.orders',
+                'calibrations.caliber',
+                'calibrations.tareType',
+                'calibrations.operator',
+            ]),
         ]);
     }
 
     public function create(Request $request): View
     {
+        $calibers = Caliber::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $pendingReceptions = Reception::query()
+            ->with([
+                'supplier',
+                'fruit',
+                'variety',
+                'paloxes.calibration.caliber',
+            ])
+            ->where('conformity_status', 'conforming')
+            ->where('processing_status', 'pending')
+            ->orderBy('received_at')
+            ->get();
+
         return view('modules.calibrages.create', [
-            'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
-            'pendingReceptions' => Reception::query()
-                ->with(['supplier', 'fruit', 'variety'])
-                ->where('conformity_status', 'conforming')
-                ->where('processing_status', 'pending')
-                ->orderBy('received_at')
-                ->get(),
+            'calibersByFruit' => $calibers
+                ->groupBy('fruit_id')
+                ->map(fn ($group) => $group->map(fn (Caliber $caliber) => [
+                    'id' => (string) $caliber->id,
+                    'name' => $caliber->name,
+                ])->values()->all())
+                ->all(),
+            'selectedReceptionId' => (string) $request->string('reception_id')->value(),
+            'savedPaloxesByReception' => $pendingReceptions
+                ->mapWithKeys(fn (Reception $reception) => [
+                    (string) $reception->id => $reception->paloxes
+                        ->sortBy('labeled_at')
+                        ->values()
+                        ->map(fn (Palox $palox) => [
+                            'id' => (string) $palox->id,
+                            'palox_number' => $palox->palox_number,
+                            'label_url' => route('paloxes.label', $palox),
+                            'caliber_name' => $palox->calibration->caliber->name,
+                            'net_weight_kg' => number_format((float) $palox->initial_net_weight_kg, 3, ',', ' '),
+                            'under_contract' => $palox->under_contract,
+                        ])
+                        ->all(),
+                ])
+                ->all(),
+            'tareTypes' => TareType::query()->where('is_active', true)->orderBy('label')->get(),
+            'manualTareTypeId' => $this->manualTareTypeId(),
+            'pendingReceptions' => $pendingReceptions,
         ]);
     }
 
@@ -59,6 +121,7 @@ class CalibrationController extends Controller
         $validated = $request->validate([
             'reception_id' => ['required', 'exists:receptions,id'],
             'caliber_id' => ['required', 'exists:calibers,id'],
+            'tare_type_id' => ['required', 'exists:tare_types,id'],
             'tare_weight_kg' => ['required', 'numeric', 'min:0'],
             'calibrated_at' => ['required', 'date'],
             'net_weight_kg' => ['required', 'numeric', 'gt:0'],
@@ -68,14 +131,20 @@ class CalibrationController extends Controller
 
         DB::transaction(function () use ($request, $validated) {
             $reception = Reception::query()->lockForUpdate()->findOrFail($validated['reception_id']);
+            $caliber = Caliber::query()->findOrFail($validated['caliber_id']);
 
             if ($reception->isNonConforming() || $reception->processing_status !== 'pending') {
                 abort(422, 'Cette reception ne peut pas etre calibree.');
             }
 
+            if ((int) $caliber->fruit_id !== (int) $reception->fruit_id) {
+                throw ValidationException::withMessages([
+                    'caliber_id' => 'Le calibre sélectionné ne correspond pas au fruit de la réception.',
+                ]);
+            }
+
             $calibration = Calibration::query()->create([
                 ...$validated,
-                'tare_type_id' => $this->manualTareTypeId(),
                 'performed_by' => $request->user()->id,
             ]);
 
@@ -93,18 +162,85 @@ class CalibrationController extends Controller
 
             $this->referenceNumberService->assignPaloxNumber($palox);
 
-            $reception->update([
-                'processing_status' => 'calibrated',
-            ]);
-
             activity()
                 ->causedBy($request->user())
                 ->performedOn($palox)
-                ->event('calibration_completed')
-                ->log('Creation d\'un palox via calibrage');
+                ->event('palox_added_to_calibration')
+                ->log('Ajout d\'un palox au calibrage');
         });
 
-        return redirect()->route('calibrages.index')->with('status', 'Calibrage et creation du palox enregistres.');
+        return redirect()
+            ->route('calibrages.create', ['reception_id' => $validated['reception_id']])
+            ->with('status', 'Palox ajoute au calibrage. Tu peux imprimer son etiquette ou saisir le suivant.');
+    }
+
+    public function finalize(Request $request, Reception $reception): RedirectResponse
+    {
+        if ($reception->isNonConforming() || $reception->processing_status !== 'pending') {
+            abort(422, 'Cette reception ne peut pas etre finalisee.');
+        }
+
+        if (! $reception->paloxes()->exists()) {
+            throw ValidationException::withMessages([
+                'reception_id' => 'Ajoute au moins un palox avant de valider le calibrage.',
+            ]);
+        }
+
+        $reception->update([
+            'processing_status' => 'calibrated',
+        ]);
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($reception)
+            ->event('calibration_finalized')
+            ->log('Validation finale du calibrage');
+
+        return redirect()->route('calibrages.index')->with('status', 'Calibrage valide avec succes.');
+    }
+
+    public function destroyLastPalox(Request $request, Reception $reception): RedirectResponse
+    {
+        if ($reception->isNonConforming() || $reception->processing_status !== 'pending') {
+            abort(422, 'Cette reception ne peut pas etre modifiee.');
+        }
+
+        $deleted = DB::transaction(function () use ($request, $reception) {
+            $palox = $reception->paloxes()
+                ->with('calibration')
+                ->latest('labeled_at')
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $palox) {
+                return false;
+            }
+
+            $calibration = $palox->calibration;
+            $paloxNumber = $palox->palox_number;
+
+            $palox->delete();
+            $calibration?->delete();
+
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($reception)
+                ->event('last_palox_removed_from_calibration')
+                ->log('Retrait du dernier palox du calibrage: '.$paloxNumber);
+
+            return true;
+        });
+
+        if (! $deleted) {
+            throw ValidationException::withMessages([
+                'reception_id' => 'Aucun palox a retirer pour cette reception.',
+            ]);
+        }
+
+        return redirect()
+            ->route('calibrages.create', ['reception_id' => $reception->id])
+            ->with('status', 'Dernier palox retire du calibrage.');
     }
 
     private function manualTareTypeId(): int
@@ -124,7 +260,7 @@ class CalibrationController extends Controller
             ->log('Impression etiquette palox');
 
         return Pdf::loadView('pdf.palox-label', [
-            'palox' => $palox->load(['reception.supplier', 'reception.variety', 'calibration.caliber', 'creator']),
-        ])->setPaper([0, 0, 226.77, 141.73])->stream($palox->palox_number.'.pdf');
+            'palox' => $palox->load(['reception.supplier', 'reception.fruit', 'reception.variety', 'calibration.caliber', 'creator']),
+        ])->setPaper([0, 0, 283.46, 425.20])->stream($palox->palox_number.'.pdf');
     }
 }

@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ReceptionController extends Controller
@@ -55,23 +56,19 @@ class ReceptionController extends Controller
 
     public function create(): View
     {
-        return view('modules.receptions.create', [
-            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
-            'fruits' => Fruit::query()->where('is_active', true)->with(['varieties' => fn ($query) => $query->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
+        return view('modules.receptions.create', $this->formData());
+    }
+
+    public function edit(Reception $reception): View
+    {
+        return view('modules.receptions.edit', [
+            'reception' => $reception->load(['supplier', 'fruit', 'variety', 'operator']),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'received_at' => ['required', 'date'],
-            'supplier_id' => ['required', 'exists:suppliers,id'],
-            'fruit_id' => ['required', 'exists:fruits,id'],
-            'variety_id' => ['required', 'exists:varieties,id'],
-            'gross_weight_kg' => ['required', 'numeric', 'gt:0'],
-            'conformity_status' => ['required', 'in:conforming,non_conforming'],
-            'non_conformity_reason' => ['required_if:conformity_status,non_conforming', 'nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $this->validateReception($request);
 
         $reception = Reception::query()->create([
             ...$validated,
@@ -93,6 +90,25 @@ class ReceptionController extends Controller
             ->with('status', 'Reception enregistree avec succes.');
     }
 
+    public function update(Request $request, Reception $reception): RedirectResponse
+    {
+        $validated = $request->validate([
+            'gross_weight_kg' => ['nullable', 'numeric', 'gt:0'],
+        ]);
+
+        $reception->update($validated);
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($reception)
+            ->event('reception_updated')
+            ->log('Mise a jour du poids brut de la reception');
+
+        return redirect()
+            ->route('receptions.index')
+            ->with('status', 'Reception mise a jour avec succes.');
+    }
+
     public function label(Reception $reception)
     {
         activity()
@@ -104,5 +120,29 @@ class ReceptionController extends Controller
         return Pdf::loadView('pdf.reception-label', [
             'reception' => $reception->load(['supplier', 'fruit', 'variety', 'operator']),
         ])->setPaper([0, 0, 226.77, 141.73])->stream($reception->reception_number.'.pdf');
+    }
+
+    private function formData(): array
+    {
+        return [
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
+            'fruits' => Fruit::query()->where('is_active', true)->with(['varieties' => fn ($query) => $query->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
+        ];
+    }
+
+    private function validateReception(Request $request): array
+    {
+        return $request->validate([
+            'received_at' => ['required', 'date'],
+            'supplier_id' => ['required', 'exists:suppliers,id'],
+            'fruit_id' => ['required', 'exists:fruits,id'],
+            'variety_id' => [
+                'required',
+                Rule::exists('varieties', 'id')->where(fn ($query) => $query->where('fruit_id', $request->integer('fruit_id'))),
+            ],
+            'gross_weight_kg' => ['nullable', 'numeric', 'gt:0'],
+            'conformity_status' => ['required', 'in:conforming,non_conforming'],
+            'non_conformity_reason' => ['required_if:conformity_status,non_conforming', 'nullable', 'string', 'max:1000'],
+        ]);
     }
 }

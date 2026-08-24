@@ -92,9 +92,16 @@ class BackofficeController extends Controller
 
     public function destroyFruit(Fruit $fruit): RedirectResponse
     {
-        if ($fruit->receptions()->exists() || $fruit->varieties()->exists() || $fruit->calibers()->exists()) {
+        if ($fruit->receptions()->exists()) {
             return $this->redirectToSection('production', 'Suppression impossible: ce fruit est deja utilise dans la production.');
         }
+
+        if ($fruit->calibers()->whereHas('calibrations')->exists()) {
+            return $this->redirectToSection('production', 'Suppression impossible: au moins un calibre de ce fruit est deja utilise en calibrage.');
+        }
+
+        $fruit->varieties()->delete();
+        $fruit->calibers()->delete();
 
         $fruit->delete();
 

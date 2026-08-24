@@ -18,7 +18,7 @@
         <div class="row"><strong>ID fournisseur :</strong> {{ $reception->supplier->supplier_code }}</div>
         <div class="row"><strong>Fruit :</strong> {{ $reception->fruit->name }}</div>
         <div class="row"><strong>Variété :</strong> {{ $reception->variety->name }}</div>
-        <div class="row"><strong>Poids brut :</strong> {{ number_format((float) $reception->gross_weight_kg, 3, ',', ' ') }} kg</div>
+        <div class="row"><strong>Poids brut :</strong> {{ $reception->gross_weight_kg !== null ? number_format((float) $reception->gross_weight_kg, 3, ',', ' ').' kg' : 'À renseigner' }}</div>
         @if ($reception->isNonConforming())
             <div class="alert">NON CONFORME - {{ $reception->non_conformity_reason }}</div>
         @endif

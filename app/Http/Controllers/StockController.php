@@ -17,6 +17,7 @@ class StockController extends Controller
     {
         $paloxQuery = Palox::query()
             ->with(['reception.supplier', 'reception.fruit', 'reception.variety', 'calibration.caliber'])
+            ->whereHas('reception', fn ($query) => $query->where('processing_status', 'calibrated'))
             ->latest('labeled_at');
 
         if ($request->filled('fruit_id')) {

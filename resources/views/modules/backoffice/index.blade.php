@@ -215,19 +215,19 @@
                                     <tbody class="divide-y divide-stone-100 bg-white">
                                         @forelse ($fruits as $fruit)
                                             <tr>
-                                                <form id="fruit-update-{{ $fruit->id }}" method="POST" action="{{ route('backoffice.fruits.update', $fruit) }}">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <td data-label="Fruit"><input type="text" name="name" value="{{ $fruit->name }}" class="input w-full" required></td>
-                                                    <td data-label="Statut">
-                                                        <label class="inline-flex items-center gap-2 text-sm text-stone-700">
-                                                            <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($fruit->is_active)>
-                                                            Actif
-                                                        </label>
-                                                    </td>
-                                                    <td data-label="Usage" class="text-xs text-stone-500">{{ $fruit->varieties_count }} variété(s) · {{ $fruit->calibers_count }} calibre(s) · {{ $fruit->receptions_count }} reception(s)</td>
-                                                </form>
+                                                <td data-label="Fruit"><input type="text" name="name" value="{{ $fruit->name }}" class="input w-full" form="fruit-update-{{ $fruit->id }}" required></td>
+                                                <td data-label="Statut">
+                                                    <label class="inline-flex items-center gap-2 text-sm text-stone-700">
+                                                        <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" form="fruit-update-{{ $fruit->id }}" @checked($fruit->is_active)>
+                                                        Actif
+                                                    </label>
+                                                </td>
+                                                <td data-label="Usage" class="text-xs text-stone-500">{{ $fruit->varieties_count }} variété(s) · {{ $fruit->calibers_count }} calibre(s) · {{ $fruit->receptions_count }} reception(s)</td>
                                                 <td data-label="Actions">
+                                                    <form id="fruit-update-{{ $fruit->id }}" method="POST" action="{{ route('backoffice.fruits.update', $fruit) }}" class="hidden">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                    </form>
                                                     <div class="flex flex-col gap-2">
                                                         <button form="fruit-update-{{ $fruit->id }}" class="btn-secondary">Enregistrer</button>
                                                         <form method="POST" action="{{ route('backoffice.fruits.destroy', $fruit) }}">

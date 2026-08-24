@@ -69,11 +69,12 @@
                                 <td data-label="Fournisseur">{{ $reception->supplier->supplier_code }}</td>
                                 <td data-label="Fruit">{{ $reception->fruit->name }}</td>
                                 <td data-label="Variété">{{ $reception->variety->name }}</td>
-                                <td data-label="Poids">{{ number_format((float) $reception->gross_weight_kg, 3, ',', ' ') }} kg</td>
+                                <td data-label="Poids">{{ $reception->gross_weight_kg !== null ? number_format((float) $reception->gross_weight_kg, 3, ',', ' ').' kg' : 'À renseigner' }}</td>
                                 <td data-label="Statut">@if ($reception->conformity_status === 'conforming')<span class="pill pill-ok">Conforme</span>@else<span class="pill pill-alert">Non conforme</span>@endif</td>
                                 <td data-label="Opérateur">{{ $reception->operator->name }}</td>
                                 <td data-label="Actions">
                                     <div class="flex flex-wrap gap-2">
+                                        <a href="{{ route('receptions.edit', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Modifier</a>
                                         <a href="{{ route('receptions.label', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a>
                                         @if ($reception->non_conformity_reason)
                                             <span class="text-xs text-stone-500">{{ $reception->non_conformity_reason }}</span>

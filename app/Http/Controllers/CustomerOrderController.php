@@ -143,6 +143,7 @@ class CustomerOrderController extends Controller
         return Palox::query()
             ->with(['reception.fruit', 'reception.variety', 'reception.supplier', 'calibration.caliber'])
             ->whereIn('availability_status', ['available', 'partial'])
+            ->whereHas('reception', fn ($query) => $query->where('processing_status', 'calibrated'))
             ->when($varietyId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('variety_id', $varietyId)))
             ->orderBy('palox_number')
             ->get();

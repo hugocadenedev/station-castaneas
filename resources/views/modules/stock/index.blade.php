@@ -198,7 +198,7 @@
                                 <tr>
                                     <td data-label="Réception" class="font-semibold text-stone-800">{{ $reception->reception_number }}</td>
                                     <td data-label="Origine">{{ $reception->supplier->supplier_code }}<div class="text-xs text-stone-500">{{ $reception->fruit->name }} - {{ $reception->variety->name }}</div></td>
-                                    <td data-label="Poids brut">{{ number_format((float) $reception->gross_weight_kg, 3, ',', ' ') }} kg</td>
+                                    <td data-label="Poids brut">{{ $reception->gross_weight_kg !== null ? number_format((float) $reception->gross_weight_kg, 3, ',', ' ').' kg' : 'À renseigner' }}</td>
                                     <td data-label="Motif">{{ $reception->non_conformity_reason }}</td>
                                     <td data-label="Actions"><a href="{{ route('receptions.label', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a></td>
                                 </tr>

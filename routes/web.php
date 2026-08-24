@@ -44,11 +44,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/receptions', [ReceptionController::class, 'index'])->name('receptions.index');
     Route::get('/receptions/create', [ReceptionController::class, 'create'])->name('receptions.create');
     Route::post('/receptions', [ReceptionController::class, 'store'])->name('receptions.store');
+    Route::get('/receptions/{reception}/edit', [ReceptionController::class, 'edit'])->name('receptions.edit');
+    Route::patch('/receptions/{reception}', [ReceptionController::class, 'update'])->name('receptions.update');
     Route::get('/receptions/{reception}/label', [ReceptionController::class, 'label'])->name('receptions.label');
 
     Route::get('/calibrages', [CalibrationController::class, 'index'])->name('calibrages.index');
     Route::get('/calibrages/create', [CalibrationController::class, 'create'])->name('calibrages.create');
+    Route::get('/calibrages/{reception}', [CalibrationController::class, 'show'])->name('calibrages.show');
     Route::post('/calibrages', [CalibrationController::class, 'store'])->name('calibrages.store');
+    Route::delete('/receptions/{reception}/calibrage/retirer-dernier', [CalibrationController::class, 'destroyLastPalox'])->name('calibrages.destroy-last-palox');
+    Route::post('/receptions/{reception}/calibrage/finaliser', [CalibrationController::class, 'finalize'])->name('calibrages.finalize');
     Route::get('/paloxes/{palox}/label', [CalibrationController::class, 'label'])->name('paloxes.label');
 
     Route::get('/stock', [StockController::class, 'index'])->name('stock.index');

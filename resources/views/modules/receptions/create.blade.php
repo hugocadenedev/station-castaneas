@@ -50,7 +50,8 @@
                 </div>
                 <div>
                     <x-input-label for="gross_weight_kg" :value="'Poids brut (kg)'" />
-                    <x-text-input id="gross_weight_kg" name="gross_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('gross_weight_kg')" required />
+                    <x-text-input id="gross_weight_kg" name="gross_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('gross_weight_kg')" />
+                    <p class="mt-2 text-xs text-stone-500">Ce champ peut être laissé vide et complété plus tard.</p>
                     <x-input-error class="mt-2" :messages="$errors->get('gross_weight_kg')" />
                 </div>
                 <div>
