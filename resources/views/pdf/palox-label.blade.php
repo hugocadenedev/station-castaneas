@@ -16,28 +16,27 @@
         }
 
         .page {
-            width: 94mm;
+            width: 100mm;
             box-sizing: border-box;
-            margin: 3mm;
+            padding: 3mm;
+            overflow: hidden;
         }
 
-        .label-table {
+        .label {
             width: 94mm;
-            height: 144mm;
             border: 0.8mm solid #111;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        .label-table td {
-            width: 100%;
-            padding: 0;
             box-sizing: border-box;
             overflow: hidden;
-            vertical-align: top;
+        }
+
+        .header {
+            width: 100%;
+            height: 18mm;
+            overflow: hidden;
         }
 
         .header-fruit {
+            float: left;
             width: 74mm;
             height: 18mm;
             padding: 3mm 4mm 1.2mm;
@@ -46,12 +45,17 @@
         }
 
         .header-supplier {
+            float: left;
             width: 20mm;
             height: 18mm;
             padding: 3.4mm 3mm 1.2mm;
             box-sizing: border-box;
             border-left: 0.8mm solid #111;
             overflow: hidden;
+        }
+
+        .header-clear {
+            clear: both;
         }
 
         .section {
@@ -161,47 +165,43 @@
 </head>
 <body>
     <div class="page">
-        <table class="label-table">
-            <tr>
-                <td class="header-fruit">
+        <div class="label">
+            <div class="header">
+                <div class="header-fruit">
                     <div class="fruit-value">{{ $palox->reception->fruit->name }}</div>
-                </td>
-                <td class="header-supplier">
+                </div>
+                <div class="header-supplier">
                     <span class="meta-label">Code fournisseur</span>
                     <span class="meta-value supplier-code-value">{{ $palox->reception->supplier->supplier_code }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="section ggn-section">
-                    <span class="meta-label">GGN</span>
-                    <span class="ggn-value">{{ $palox->reception->supplier->ggn_code ?: '-' }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="section palox-section">
-                    <span class="section-label">N° Palox</span>
-                    <span class="palox-value">{{ $palox->palox_number }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="section variety-section">
-                    <span class="section-label">Variété</span>
-                    <span class="section-value">{{ $palox->reception->variety->name }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="section caliber-section">
-                    <span class="section-label">Calibre</span>
-                    <span class="section-value">{{ $palox->calibration->caliber->name }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="section weight-section">
-                    <span class="section-label">Poids</span>
-                    <span class="section-value weight-value">{{ number_format((float) $palox->remaining_net_weight_kg, 3, ',', ' ') }} kg</span>
-                </td>
-            </tr>
-        </table>
+                </div>
+                <div class="header-clear"></div>
+            </div>
+
+            <div class="section ggn-section">
+                <span class="meta-label">GGN</span>
+                <span class="ggn-value">{{ $palox->reception->supplier->ggn_code ?: '-' }}</span>
+            </div>
+
+            <div class="section palox-section">
+                <span class="section-label">N° Palox</span>
+                <span class="palox-value">{{ $palox->palox_number }}</span>
+            </div>
+
+            <div class="section variety-section">
+                <span class="section-label">Variété</span>
+                <span class="section-value">{{ $palox->reception->variety->name }}</span>
+            </div>
+
+            <div class="section caliber-section">
+                <span class="section-label">Calibre</span>
+                <span class="section-value">{{ $palox->calibration->caliber->name }}</span>
+            </div>
+
+            <div class="section weight-section">
+                <span class="section-label">Poids</span>
+                <span class="section-value weight-value">{{ number_format((float) $palox->remaining_net_weight_kg, 3, ',', ' ') }} kg</span>
+            </div>
+        </div>
     </div>
 </body>
 </html>
