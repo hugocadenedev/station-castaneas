@@ -15,6 +15,9 @@ cd "$PROJECT_ROOT"
 echo "==> Updating git checkout"
 git pull
 
+echo "==> Clearing stale Laravel bootstrap caches"
+rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
+
 echo "==> Installing PHP dependencies"
 "$PHP_BIN" "$COMPOSER_BIN" install --no-dev --optimize-autoloader
 
