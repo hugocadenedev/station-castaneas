@@ -183,6 +183,12 @@
             word-break: break-word;
         }
 
+        .variety-value {
+            padding-top: 3.4mm;
+            font-size: 9.5mm;
+            line-height: 1.02;
+        }
+
         .caliber-value,
         .weight-value {
             font-size: 11mm;
@@ -228,7 +234,7 @@
                     <span class="section-label">Variété</span>
                 </div>
                 <div class="section-content">
-                    <span class="section-value">{{ $palox->reception->variety->name }}</span>
+                    <span class="section-value variety-value">{{ $palox->reception->variety->name }}</span>
                 </div>
                 <div class="section-clear"></div>
             </div>
