@@ -403,6 +403,64 @@ class OperationsFlowTest extends TestCase
         $response->assertSee(Palox::query()->firstOrFail()->palox_number, false);
     }
 
+    public function test_palox_number_generation_stays_unique_after_deleting_an_older_palox(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('operateur');
+
+        $supplier = Supplier::query()->firstOrFail();
+        $fruit = Fruit::query()->firstOrFail();
+        $variety = Variety::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $caliber = Caliber::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $tareType = TareType::query()->where('is_active', true)->firstOrFail();
+
+        $reception = Reception::query()->create([
+            'reception_number' => 'REC-TEST-UNIQUE-01',
+            'received_at' => now(),
+            'supplier_id' => $supplier->id,
+            'fruit_id' => $fruit->id,
+            'variety_id' => $variety->id,
+            'received_by' => $user->id,
+            'gross_weight_kg' => 260.000,
+            'conformity_status' => 'conforming',
+            'processing_status' => 'pending',
+        ]);
+
+        foreach ([120.000, 110.000] as $netWeight) {
+            $this->actingAs($user)->post(route('calibrages.store'), [
+                'reception_id' => $reception->id,
+                'caliber_id' => $caliber->id,
+                'tare_type_id' => $tareType->id,
+                'tare_weight_kg' => 12.500,
+                'calibrated_at' => now()->format('Y-m-d H:i:s'),
+                'net_weight_kg' => $netWeight,
+                'waste_weight_kg' => 5.000,
+            ])->assertRedirect(route('calibrages.create', ['reception_id' => $reception->id]));
+        }
+
+        $firstPalox = Palox::query()->orderBy('id')->firstOrFail();
+        $firstCalibrationId = $firstPalox->calibration_id;
+        $firstPalox->delete();
+        Calibration::query()->whereKey($firstCalibrationId)->delete();
+
+        $this->actingAs($user)->post(route('calibrages.store'), [
+            'reception_id' => $reception->id,
+            'caliber_id' => $caliber->id,
+            'tare_type_id' => $tareType->id,
+            'tare_weight_kg' => 12.500,
+            'calibrated_at' => now()->format('Y-m-d H:i:s'),
+            'net_weight_kg' => 100.000,
+            'waste_weight_kg' => 5.000,
+        ])->assertRedirect(route('calibrages.create', ['reception_id' => $reception->id]));
+
+        $paloxNumbers = Palox::query()->orderBy('id')->pluck('palox_number')->all();
+
+        $this->assertCount(2, array_unique($paloxNumbers));
+        $this->assertSame('available', Palox::query()->latest('id')->firstOrFail()->availability_status);
+    }
+
     public function test_last_palox_can_be_removed_before_calibration_finalization(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);

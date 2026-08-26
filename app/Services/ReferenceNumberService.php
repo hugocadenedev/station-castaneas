@@ -6,6 +6,7 @@ use App\Models\CustomerOrder;
 use App\Models\Palox;
 use App\Models\Reception;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 
 class ReferenceNumberService
 {
@@ -16,12 +17,29 @@ class ReferenceNumberService
 
     public function makePaloxNumber(CarbonInterface $labeledAt, int $paloxId): string
     {
-        $sequence = Palox::query()
-            ->whereYear('labeled_at', $labeledAt->year)
-            ->where('id', '<=', $paloxId)
-            ->count();
+        $prefix = $labeledAt->format('y').'-';
 
-        return sprintf('%s-%03d', $labeledAt->format('y'), $sequence);
+        $sequence = $this->existingPaloxSequencesForYear($labeledAt, $paloxId)
+            ->max() ?? 0;
+
+        return sprintf('%s%03d', $prefix, $sequence + 1);
+    }
+
+    private function existingPaloxSequencesForYear(CarbonInterface $labeledAt, int $paloxId): Collection
+    {
+        $prefix = $labeledAt->format('y').'-';
+
+        return Palox::query()
+            ->whereYear('labeled_at', $labeledAt->year)
+            ->whereKeyNot($paloxId)
+            ->where('palox_number', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->pluck('palox_number')
+            ->map(function (string $paloxNumber) use ($prefix): int {
+                $suffix = substr($paloxNumber, strlen($prefix));
+
+                return ctype_digit($suffix) ? (int) $suffix : 0;
+            });
     }
 
     public function makeOrderNumber(CarbonInterface $orderedAt, int $orderId): string
