@@ -33,7 +33,7 @@
                             <th>Origine</th>
                             <th>Palox</th>
                             <th>Poids total</th>
-                            <th>Dernier calibrage</th>
+                            <th>Date calibrage</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -42,12 +42,11 @@
                             <tr>
                                 <td data-label="Réception">
                                     <div class="font-semibold text-stone-800">{{ $reception->reception_number }}</div>
-                                    <div class="text-xs text-stone-500">{{ optional($reception->calibrations_max_calibrated_at)->format('d/m/Y H:i') }}</div>
                                 </td>
                                 <td data-label="Origine">{{ $reception->supplier->supplier_code }}<div class="text-xs text-stone-500">{{ $reception->fruit->name }} - {{ $reception->variety->name }}</div></td>
                                 <td data-label="Palox">{{ $reception->paloxes_count }} palox</td>
                                 <td data-label="Poids">{{ number_format((float) ($reception->calibrations_sum_net_weight_kg ?? 0), 3, ',', ' ') }} kg<div class="text-xs text-stone-500">Déchet: {{ number_format((float) ($reception->calibrations_sum_waste_weight_kg ?? 0), 3, ',', ' ') }} kg</div></td>
-                                <td data-label="Dernier calibrage">{{ optional($reception->calibrations_max_calibrated_at)->format('d/m/Y H:i') }}</td>
+                                <td data-label="Date calibrage">{{ optional($reception->calibrations_max_calibrated_at)->format('d/m/Y H:i') }}</td>
                                 <td data-label="Actions"><a href="{{ route('calibrages.show', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Voir le détail</a></td>
                             </tr>
                         @empty

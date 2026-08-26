@@ -138,7 +138,7 @@
                         </div>
                         <div>
                             <x-input-label for="net_weight_kg" :value="'Poids net (kg)'" />
-                            <x-text-input id="net_weight_kg" name="net_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('net_weight_kg')" required />
+                            <x-text-input id="net_weight_kg" name="net_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('net_weight_kg')" />
                             <x-input-error class="mt-2" :messages="$errors->get('net_weight_kg')" />
                         </div>
                         <div>

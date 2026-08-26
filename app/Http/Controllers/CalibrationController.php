@@ -124,10 +124,18 @@ class CalibrationController extends Controller
             'tare_type_id' => ['required', 'exists:tare_types,id'],
             'tare_weight_kg' => ['required', 'numeric', 'min:0'],
             'calibrated_at' => ['required', 'date'],
-            'net_weight_kg' => ['required', 'numeric', 'gt:0'],
+            'net_weight_kg' => ['nullable', 'numeric', 'min:0'],
             'waste_weight_kg' => ['required', 'numeric', 'min:0'],
             'under_contract' => ['nullable', 'boolean'],
         ]);
+
+        $validated['net_weight_kg'] = $validated['net_weight_kg'] ?? 0;
+
+        if ((float) $validated['net_weight_kg'] === 0.0 && (float) $validated['waste_weight_kg'] === 0.0) {
+            throw ValidationException::withMessages([
+                'net_weight_kg' => 'Renseigne un poids net ou un poids dechet superieur a zero.',
+            ]);
+        }
 
         DB::transaction(function () use ($request, $validated) {
             $reception = Reception::query()->lockForUpdate()->findOrFail($validated['reception_id']);

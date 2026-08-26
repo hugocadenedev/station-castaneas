@@ -403,6 +403,53 @@ class OperationsFlowTest extends TestCase
         $response->assertSee(Palox::query()->firstOrFail()->palox_number, false);
     }
 
+    public function test_calibration_can_be_saved_with_empty_net_weight_for_waste_only_palox(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('operateur');
+
+        $supplier = Supplier::query()->firstOrFail();
+        $fruit = Fruit::query()->firstOrFail();
+        $variety = Variety::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $caliber = Caliber::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $tareType = TareType::query()->where('is_active', true)->firstOrFail();
+
+        $reception = Reception::query()->create([
+            'reception_number' => 'REC-TEST-WASTE-01',
+            'received_at' => now(),
+            'supplier_id' => $supplier->id,
+            'fruit_id' => $fruit->id,
+            'variety_id' => $variety->id,
+            'received_by' => $user->id,
+            'gross_weight_kg' => 200.000,
+            'conformity_status' => 'conforming',
+            'processing_status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('calibrages.store'), [
+            'reception_id' => $reception->id,
+            'caliber_id' => $caliber->id,
+            'tare_type_id' => $tareType->id,
+            'tare_weight_kg' => 12.500,
+            'calibrated_at' => now()->format('Y-m-d H:i:s'),
+            'net_weight_kg' => '',
+            'waste_weight_kg' => 200.000,
+        ]);
+
+        $response->assertRedirect(route('calibrages.create', ['reception_id' => $reception->id]));
+
+        $calibration = Calibration::query()->firstOrFail();
+        $palox = Palox::query()->firstOrFail();
+
+        $this->assertSame('0.000', $calibration->net_weight_kg);
+        $this->assertSame('200.000', $calibration->waste_weight_kg);
+        $this->assertSame('0.000', $palox->initial_net_weight_kg);
+        $this->assertSame('0.000', $palox->remaining_net_weight_kg);
+        $this->assertSame('exhausted', $palox->availability_status);
+    }
+
     public function test_palox_number_generation_stays_unique_after_deleting_an_older_palox(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);

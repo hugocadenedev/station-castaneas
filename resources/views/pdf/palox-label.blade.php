@@ -60,14 +60,12 @@
 
         .section {
             border-top: 0.8mm solid #111;
-            text-align: center;
             box-sizing: border-box;
             overflow: hidden;
         }
 
         .palox-section {
-            height: 20mm;
-            padding: 3.2mm 4.8mm 1.6mm;
+            height: 21mm;
         }
 
         .ggn-section {
@@ -77,17 +75,15 @@
         }
 
         .variety-section {
-            height: 24mm;
-            padding: 3.8mm 4.8mm 1.8mm;
+            height: 22mm;
         }
 
         .caliber-section {
-            height: 16mm;
-            padding: 3.2mm 4.8mm 1.4mm;
+            height: 18mm;
         }
 
         .weight-section {
-            padding: 3.4mm 4.8mm 1.8mm;
+            height: 18mm;
         }
 
         .fruit-value {
@@ -132,16 +128,45 @@
 
         .section-label {
             display: block;
-            font-size: 3.5mm;
+            font-size: 2.8mm;
             font-weight: 700;
             letter-spacing: 0.06em;
             line-height: 1;
             text-transform: uppercase;
         }
 
+        .section-rail {
+            position: relative;
+            float: left;
+            width: 16mm;
+            height: 100%;
+            padding: 0 1.4mm;
+            border-right: 0.8mm solid #111;
+            box-sizing: border-box;
+        }
+
+        .section-rail .section-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16mm;
+            text-align: center;
+            white-space: nowrap;
+            transform: translate(-50%, -50%) rotate(-90deg);
+            transform-origin: center;
+        }
+
+        .section-content {
+            margin-left: 16mm;
+            height: 100%;
+            padding: 0 3mm;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
         .palox-value {
             display: block;
-            margin-top: 1.8mm;
+            padding-top: 4.3mm;
             font-size: 11mm;
             font-weight: 700;
             line-height: 1;
@@ -150,16 +175,22 @@
 
         .section-value {
             display: block;
-            margin-top: 2mm;
-            font-size: 7.6mm;
+            padding-top: 4.3mm;
+            font-size: 11mm;
             font-weight: 700;
             line-height: 1;
             text-transform: uppercase;
             word-break: break-word;
         }
 
+        .caliber-value,
         .weight-value {
-            font-size: 7.1mm;
+            font-size: 11mm;
+            line-height: 1;
+        }
+
+        .section-clear {
+            clear: both;
         }
     </style>
 </head>
@@ -183,23 +214,43 @@
             </div>
 
             <div class="section palox-section">
-                <span class="section-label">N° Palox</span>
-                <span class="palox-value">{{ $palox->palox_number }}</span>
+                <div class="section-rail">
+                    <span class="section-label">N° Palox</span>
+                </div>
+                <div class="section-content">
+                    <span class="palox-value">{{ $palox->palox_number }}</span>
+                </div>
+                <div class="section-clear"></div>
             </div>
 
             <div class="section variety-section">
-                <span class="section-label">Variété</span>
-                <span class="section-value">{{ $palox->reception->variety->name }}</span>
+                <div class="section-rail">
+                    <span class="section-label">Variété</span>
+                </div>
+                <div class="section-content">
+                    <span class="section-value">{{ $palox->reception->variety->name }}</span>
+                </div>
+                <div class="section-clear"></div>
             </div>
 
             <div class="section caliber-section">
-                <span class="section-label">Calibre</span>
-                <span class="section-value">{{ $palox->calibration->caliber->name }}</span>
+                <div class="section-rail">
+                    <span class="section-label">Calibre</span>
+                </div>
+                <div class="section-content">
+                    <span class="section-value caliber-value">{{ $palox->calibration->caliber->name }}</span>
+                </div>
+                <div class="section-clear"></div>
             </div>
 
             <div class="section weight-section">
-                <span class="section-label">Poids</span>
-                <span class="section-value weight-value">{{ number_format((float) $palox->remaining_net_weight_kg, 3, ',', ' ') }} kg</span>
+                <div class="section-rail">
+                    <span class="section-label">Poids</span>
+                </div>
+                <div class="section-content">
+                    <span class="section-value weight-value">{{ rtrim(rtrim(number_format((float) $palox->remaining_net_weight_kg, 1, ',', ''), '0'), ',') }} kg</span>
+                </div>
+                <div class="section-clear"></div>
             </div>
         </div>
     </div>
