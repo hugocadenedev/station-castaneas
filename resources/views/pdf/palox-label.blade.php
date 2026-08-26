@@ -3,11 +3,9 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { size: 100mm 150mm; margin: 0; }
+        @page { margin: 0; }
 
         html, body {
-            width: 100mm;
-            height: 150mm;
             margin: 0;
             padding: 0;
         }
@@ -18,49 +16,42 @@
         }
 
         .page {
-            width: 100mm;
-            height: 150mm;
-            padding: 3mm;
-            box-sizing: border-box;
-        }
-
-        .label {
             width: 94mm;
+            box-sizing: border-box;
+            margin: 3mm;
+        }
+
+        .label-table {
+            width: 94mm;
+            height: 144mm;
             border: 0.8mm solid #111;
-            box-sizing: border-box;
+            border-collapse: collapse;
+            table-layout: fixed;
         }
 
-        .header {
+        .label-table td {
             width: 100%;
+            padding: 0;
+            box-sizing: border-box;
             overflow: hidden;
+            vertical-align: top;
         }
 
-        .header-col {
-            float: left;
+        .header-fruit {
+            width: 74mm;
             height: 18mm;
-            padding: 1.5mm 2mm;
+            padding: 3mm 4mm 1.2mm;
             box-sizing: border-box;
             overflow: hidden;
         }
 
-        .header-col + .header-col {
-            border-left: 0.8mm solid #111;
-        }
-
-        .fruit-col {
-            width: 58mm;
-        }
-
-        .supplier-col {
-            width: 16mm;
-        }
-
-        .ggn-col {
+        .header-supplier {
             width: 20mm;
-        }
-
-        .clearfix {
-            clear: both;
+            height: 18mm;
+            padding: 3.4mm 3mm 1.2mm;
+            box-sizing: border-box;
+            border-left: 0.8mm solid #111;
+            overflow: hidden;
         }
 
         .section {
@@ -72,29 +63,34 @@
 
         .palox-section {
             height: 20mm;
-            padding: 2.5mm 4mm 0;
+            padding: 3.2mm 4.8mm 1.6mm;
+        }
+
+        .ggn-section {
+            height: 9mm;
+            padding: 1.9mm 4.5mm 1.1mm;
+            text-align: left;
         }
 
         .variety-section {
             height: 24mm;
-            padding: 3mm 4mm 0;
+            padding: 3.8mm 4.8mm 1.8mm;
         }
 
         .caliber-section {
             height: 16mm;
-            padding: 3mm 4mm 0;
+            padding: 3.2mm 4.8mm 1.4mm;
         }
 
         .weight-section {
-            height: 18mm;
-            padding: 3mm 4mm 0;
+            padding: 3.4mm 4.8mm 1.8mm;
         }
 
         .fruit-value {
-            margin-top: 5mm;
+            margin-top: 3.2mm;
             font-size: 6mm;
             font-weight: 700;
-            line-height: 0.95;
+            line-height: 1;
             text-transform: uppercase;
             word-break: break-word;
         }
@@ -116,14 +112,18 @@
         }
 
         .supplier-code-value {
-            margin-top: 2.2mm;
+            margin-top: 3.1mm;
             font-size: 3.6mm;
         }
 
         .ggn-value {
-            margin-top: 0.8mm;
+            display: block;
+            margin-top: 1.1mm;
             font-size: 3mm;
-            word-break: break-all;
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .section-label {
@@ -137,7 +137,7 @@
 
         .palox-value {
             display: block;
-            margin-top: 1.2mm;
+            margin-top: 1.8mm;
             font-size: 11mm;
             font-weight: 700;
             line-height: 1;
@@ -146,10 +146,10 @@
 
         .section-value {
             display: block;
-            margin-top: 1.4mm;
+            margin-top: 2mm;
             font-size: 7.6mm;
             font-weight: 700;
-            line-height: 0.98;
+            line-height: 1;
             text-transform: uppercase;
             word-break: break-word;
         }
@@ -161,42 +161,47 @@
 </head>
 <body>
     <div class="page">
-        <div class="label">
-            <div class="header">
-                <div class="header-col fruit-col">
+        <table class="label-table">
+            <tr>
+                <td class="header-fruit">
                     <div class="fruit-value">{{ $palox->reception->fruit->name }}</div>
-                </div>
-                <div class="header-col supplier-col">
+                </td>
+                <td class="header-supplier">
                     <span class="meta-label">Code fournisseur</span>
                     <span class="meta-value supplier-code-value">{{ $palox->reception->supplier->supplier_code }}</span>
-                </div>
-                <div class="header-col ggn-col">
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="section ggn-section">
                     <span class="meta-label">GGN</span>
-                    <span class="meta-value ggn-value">{{ $palox->reception->supplier->ggn_code ?: '-' }}</span>
-                </div>
-                <div class="clearfix"></div>
-            </div>
-
-            <div class="section palox-section">
-                <span class="section-label">N° Palox</span>
-                <span class="palox-value">{{ $palox->palox_number }}</span>
-            </div>
-
-            <div class="section variety-section">
-                <span class="section-label">Variété</span>
-                <span class="section-value">{{ $palox->reception->variety->name }}</span>
-            </div>
-
-            <div class="section caliber-section">
-                <span class="section-label">Calibre</span>
-                <span class="section-value">{{ $palox->calibration->caliber->name }}</span>
-            </div>
-
-            <div class="section weight-section">
-                <span class="section-label">Poids</span>
-                <span class="section-value weight-value">{{ number_format((float) $palox->remaining_net_weight_kg, 3, ',', ' ') }} kg</span>
-            </div>
-        </div>
+                    <span class="ggn-value">{{ $palox->reception->supplier->ggn_code ?: '-' }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="section palox-section">
+                    <span class="section-label">N° Palox</span>
+                    <span class="palox-value">{{ $palox->palox_number }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="section variety-section">
+                    <span class="section-label">Variété</span>
+                    <span class="section-value">{{ $palox->reception->variety->name }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="section caliber-section">
+                    <span class="section-label">Calibre</span>
+                    <span class="section-value">{{ $palox->calibration->caliber->name }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="section weight-section">
+                    <span class="section-label">Poids</span>
+                    <span class="section-value weight-value">{{ number_format((float) $palox->remaining_net_weight_kg, 3, ',', ' ') }} kg</span>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>

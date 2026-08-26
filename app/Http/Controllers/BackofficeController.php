@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\Variety;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Spatie\Activitylog\Models\Activity;
@@ -25,6 +26,8 @@ class BackofficeController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->ensureDefaultRolesExist();
+
         $activityQuery = Activity::query()->with('causer')->latest();
 
         if ($request->filled('audit_event')) {
@@ -92,18 +95,26 @@ class BackofficeController extends Controller
 
     public function destroyFruit(Fruit $fruit): RedirectResponse
     {
-        if ($fruit->receptions()->exists()) {
-            return $this->redirectToSection('production', 'Suppression impossible: ce fruit est deja utilise dans la production.');
+        $receptionsCount = $fruit->receptions()->count();
+
+        if ($receptionsCount > 0) {
+            return $this->redirectToSection('production', "Suppression impossible: ce fruit est lie a {$receptionsCount} reception(s).");
         }
 
-        if ($fruit->calibers()->whereHas('calibrations')->exists()) {
-            return $this->redirectToSection('production', 'Suppression impossible: au moins un calibre de ce fruit est deja utilise en calibrage.');
+        $calibrationsCount = Calibration::query()
+            ->whereHas('caliber', fn ($query) => $query->where('fruit_id', $fruit->id))
+            ->count();
+
+        if ($calibrationsCount > 0) {
+            return $this->redirectToSection('production', "Suppression impossible: ce fruit est lie a {$calibrationsCount} calibrage(s) via ses calibres.");
         }
 
-        $fruit->varieties()->delete();
-        $fruit->calibers()->delete();
+        DB::transaction(function () use ($fruit): void {
+            $fruit->varieties()->delete();
+            $fruit->calibers()->delete();
 
-        $fruit->delete();
+            $fruit->delete();
+        });
 
         return $this->redirectToSection('production', 'Fruit supprime.');
     }
@@ -157,8 +168,10 @@ class BackofficeController extends Controller
 
     public function destroySupplier(Supplier $supplier): RedirectResponse
     {
-        if ($supplier->receptions()->exists()) {
-            return $this->redirectToSection('fournisseurs', 'Suppression impossible: ce fournisseur est deja utilise en reception.');
+        $receptionsCount = $supplier->receptions()->count();
+
+        if ($receptionsCount > 0) {
+            return $this->redirectToSection('fournisseurs', "Suppression impossible: ce fournisseur est lie a {$receptionsCount} reception(s).");
         }
 
         $supplier->delete();
@@ -226,6 +239,8 @@ class BackofficeController extends Controller
 
     public function storeUser(Request $request): RedirectResponse
     {
+        $this->ensureDefaultRolesExist();
+
         $validated = $this->validateUser($request, true);
 
         $user = User::query()->create([
@@ -242,6 +257,8 @@ class BackofficeController extends Controller
 
     public function updateUser(Request $request, User $user): RedirectResponse
     {
+        $this->ensureDefaultRolesExist();
+
         $validated = $this->validateUser($request, false, $user);
 
         $user->fill([
@@ -365,8 +382,14 @@ class BackofficeController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => [$creating ? 'required' : 'nullable', 'string', 'min:8'],
-            'role' => ['required', 'exists:roles,name'],
+            'role' => ['required', Rule::exists('roles', 'name')->where(fn ($query) => $query->where('guard_name', 'web'))],
             'is_active' => ['nullable', 'boolean'],
         ]);
+    }
+
+    private function ensureDefaultRolesExist(): void
+    {
+        Role::findOrCreate('superadmin', 'web');
+        Role::findOrCreate('operateur', 'web');
     }
 }

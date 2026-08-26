@@ -16,6 +16,7 @@ use Database\Seeders\ReferenceDataSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class OperationsFlowTest extends TestCase
@@ -118,6 +119,79 @@ class OperationsFlowTest extends TestCase
         $this->assertSoftDeleted('fruits', ['id' => $fruit->id]);
         $this->assertSoftDeleted('varieties', ['id' => $variety->id]);
         $this->assertSoftDeleted('calibers', ['id' => $caliber->id]);
+    }
+
+    public function test_superadmin_can_create_supplier_from_backoffice(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+
+        $name = 'Fournisseur test '.Str::random(8);
+        $supplierCode = 'FOU-'.random_int(100, 999);
+        $ggnCode = 'GGN-'.random_int(1000000000000, 9999999999999);
+        $email = 'supplier-'.Str::lower(Str::random(6)).'@example.test';
+
+        $response = $this->actingAs($user)->post(route('backoffice.suppliers.store'), [
+            'name' => $name,
+            'supplier_code' => $supplierCode,
+            'ggn_code' => $ggnCode,
+            'email' => $email,
+            'phone' => '0600000000',
+        ]);
+
+        $response->assertRedirect(route('backoffice.index', ['section' => 'fournisseurs']));
+
+        $this->assertDatabaseHas('suppliers', [
+            'name' => $name,
+            'supplier_code' => $supplierCode,
+            'ggn_code' => $ggnCode,
+            'email' => $email,
+        ]);
+    }
+
+    public function test_superadmin_can_delete_unused_supplier(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+
+        $supplier = Supplier::query()->create([
+            'name' => 'Suppression test '.Str::random(8),
+            'supplier_code' => 'FOU-'.random_int(100, 999),
+            'ggn_code' => 'GGN-'.random_int(1000000000000, 9999999999999),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->delete(route('backoffice.suppliers.destroy', $supplier));
+
+        $response->assertRedirect(route('backoffice.index', ['section' => 'fournisseurs']));
+        $this->assertSoftDeleted('suppliers', ['id' => $supplier->id]);
+    }
+
+    public function test_superadmin_can_create_user_even_if_operator_role_was_missing(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+
+        Role::query()->where('name', 'operateur')->delete();
+
+        $email = 'user-'.Str::lower(Str::random(8)).'@example.test';
+
+        $response = $this->actingAs($user)->post(route('backoffice.users.store'), [
+            'name' => 'Operateur Test',
+            'email' => $email,
+            'password' => 'motdepasse8',
+            'role' => 'operateur',
+        ]);
+
+        $response->assertRedirect(route('backoffice.index', ['section' => 'utilisateurs']));
+        $this->assertDatabaseHas('users', ['email' => $email, 'name' => 'Operateur Test']);
+        $this->assertTrue(User::query()->where('email', $email)->firstOrFail()->hasRole('operateur'));
     }
 
     public function test_calibration_creates_a_palox_and_marks_reception_as_calibrated(): void
