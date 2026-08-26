@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/receptions', [ReceptionController::class, 'store'])->name('receptions.store');
     Route::get('/receptions/{reception}/edit', [ReceptionController::class, 'edit'])->name('receptions.edit');
     Route::patch('/receptions/{reception}', [ReceptionController::class, 'update'])->name('receptions.update');
+    Route::delete('/receptions/{reception}', [ReceptionController::class, 'destroy'])->name('receptions.destroy');
     Route::get('/receptions/{reception}/label', [ReceptionController::class, 'label'])->name('receptions.label');
 
     Route::get('/calibrages', [CalibrationController::class, 'index'])->name('calibrages.index');

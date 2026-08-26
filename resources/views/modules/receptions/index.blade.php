@@ -76,6 +76,11 @@
                                     <div class="flex flex-wrap gap-2">
                                         <a href="{{ route('receptions.edit', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Modifier</a>
                                         <a href="{{ route('receptions.label', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a>
+                                        <form method="POST" action="{{ route('receptions.destroy', $reception) }}" onsubmit="return confirmReceptionDeletion('{{ $reception->reception_number }}');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-sm font-semibold text-rose-700">Supprimer</button>
+                                        </form>
                                         @if ($reception->non_conformity_reason)
                                             <span class="text-xs text-stone-500">{{ $reception->non_conformity_reason }}</span>
                                         @endif
@@ -91,4 +96,22 @@
             <div class="surface-header">{{ $receptions->links() }}</div>
         </section>
     </div>
+
+    <script>
+        function confirmReceptionDeletion(receptionNumber) {
+            if (! window.confirm('Supprimer cette reception ?')) {
+                return false;
+            }
+
+            const confirmation = window.prompt('Tapez le numero de reception pour confirmer :', '');
+
+            if (confirmation !== receptionNumber) {
+                window.alert('Suppression annulee : numero de reception incorrect.');
+
+                return false;
+            }
+
+            return window.confirm('Confirmation finale : supprimer definitivement ' + receptionNumber + ' ?');
+        }
+    </script>
 </x-app-layout>

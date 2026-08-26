@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -120,6 +121,31 @@ class ReceptionController extends Controller
         return Pdf::loadView('pdf.reception-label', [
             'reception' => $reception->load(['supplier', 'fruit', 'variety', 'operator']),
         ])->setPaper([0, 0, 226.77, 141.73])->stream($reception->reception_number.'.pdf');
+    }
+
+    public function destroy(Request $request, Reception $reception): RedirectResponse
+    {
+        $reception->load(['paloxes.orders', 'calibrations']);
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($reception)
+            ->event('reception_deleted')
+            ->log('Suppression d\'une reception');
+
+        DB::transaction(function () use ($reception): void {
+            foreach ($reception->paloxes as $palox) {
+                $palox->orders()->detach();
+                $palox->delete();
+            }
+
+            $reception->calibrations()->delete();
+            $reception->delete();
+        });
+
+        return redirect()
+            ->route('receptions.index')
+            ->with('status', 'Reception supprimee avec succes.');
     }
 
     private function formData(): array

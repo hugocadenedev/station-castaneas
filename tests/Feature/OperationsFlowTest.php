@@ -16,6 +16,7 @@ use Database\Seeders\ReferenceDataSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -169,6 +170,72 @@ class OperationsFlowTest extends TestCase
 
         $response->assertRedirect(route('backoffice.index', ['section' => 'fournisseurs']));
         $this->assertSoftDeleted('suppliers', ['id' => $supplier->id]);
+    }
+
+    public function test_reception_deletion_removes_related_calibrations_paloxes_and_order_links(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('operateur');
+
+        $supplier = Supplier::query()->firstOrFail();
+        $fruit = Fruit::query()->firstOrFail();
+        $variety = Variety::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $caliber = Caliber::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $tareType = TareType::query()->firstOrFail();
+
+        $reception = Reception::query()->create([
+            'reception_number' => 'REC-'.now()->format('Ymd').'-'.random_int(1000, 9999),
+            'received_at' => now(),
+            'supplier_id' => $supplier->id,
+            'fruit_id' => $fruit->id,
+            'variety_id' => $variety->id,
+            'received_by' => $user->id,
+            'gross_weight_kg' => 250.000,
+            'conformity_status' => 'conforming',
+            'processing_status' => 'pending',
+        ]);
+
+        $calibration = Calibration::query()->create([
+            'reception_id' => $reception->id,
+            'caliber_id' => $caliber->id,
+            'tare_type_id' => $tareType->id,
+            'performed_by' => $user->id,
+            'calibrated_at' => Carbon::now(),
+            'net_weight_kg' => 200.000,
+            'waste_weight_kg' => 5.000,
+        ]);
+
+        $palox = Palox::query()->create([
+            'reception_id' => $reception->id,
+            'calibration_id' => $calibration->id,
+            'created_by' => $user->id,
+            'palox_number' => 'PAL-TEST-'.Str::upper(Str::random(8)),
+            'initial_net_weight_kg' => 200.000,
+            'remaining_net_weight_kg' => 150.000,
+            'under_contract' => false,
+            'availability_status' => 'partial',
+            'labeled_at' => Carbon::now(),
+        ]);
+
+        $order = CustomerOrder::query()->create([
+            'client_name' => 'Client test suppression',
+            'order_number' => 'CMD-'.Str::upper(Str::random(8)),
+            'ordered_at' => Carbon::now(),
+            'created_by' => $user->id,
+        ]);
+
+        $order->paloxes()->attach($palox->id, ['picked_net_weight_kg' => 50.000]);
+
+        $response = $this->actingAs($user)->delete(route('receptions.destroy', $reception));
+
+        $response->assertRedirect(route('receptions.index'));
+        $this->assertDatabaseMissing('receptions', ['id' => $reception->id]);
+        $this->assertDatabaseMissing('calibrations', ['id' => $calibration->id]);
+        $this->assertDatabaseMissing('paloxes', ['id' => $palox->id]);
+        $this->assertDatabaseMissing('customer_order_palox', ['palox_id' => $palox->id]);
+        $this->assertDatabaseHas('customer_orders', ['id' => $order->id]);
     }
 
     public function test_superadmin_can_create_user_even_if_operator_role_was_missing(): void

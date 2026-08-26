@@ -47,6 +47,33 @@
                     <a href="{{ route('receptions.index') }}" class="btn-secondary">Annuler</a>
                 </div>
             </form>
+
+            <form method="POST" action="{{ route('receptions.destroy', $reception) }}" class="mt-8 border-t border-stone-200 pt-6" onsubmit="return confirmReceptionDeletion('{{ $reception->reception_number }}');">
+                @csrf
+                @method('DELETE')
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-sm text-stone-500">Cette action supprime la réception, ses calibrages et ses palox liés.</p>
+                    <button type="submit" class="btn-danger">Supprimer la réception</button>
+                </div>
+            </form>
         </div>
     </section>
+
+    <script>
+        function confirmReceptionDeletion(receptionNumber) {
+            if (! window.confirm('Supprimer cette reception ?')) {
+                return false;
+            }
+
+            const confirmation = window.prompt('Tapez le numero de reception pour confirmer :', '');
+
+            if (confirmation !== receptionNumber) {
+                window.alert('Suppression annulee : numero de reception incorrect.');
+
+                return false;
+            }
+
+            return window.confirm('Confirmation finale : supprimer definitivement ' + receptionNumber + ' ?');
+        }
+    </script>
 </x-app-layout>
