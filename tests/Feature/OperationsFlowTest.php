@@ -361,6 +361,48 @@ class OperationsFlowTest extends TestCase
         $this->assertSame('calibrated', $reception->fresh()->processing_status);
     }
 
+    public function test_calibration_store_redirect_renders_create_page_with_saved_palox(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('operateur');
+
+        $supplier = Supplier::query()->firstOrFail();
+        $fruit = Fruit::query()->firstOrFail();
+        $variety = Variety::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $caliber = Caliber::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $tareType = TareType::query()->where('is_active', true)->firstOrFail();
+
+        $reception = Reception::query()->create([
+            'reception_number' => 'REC-TEST-REDIRECT-01',
+            'received_at' => now(),
+            'supplier_id' => $supplier->id,
+            'fruit_id' => $fruit->id,
+            'variety_id' => $variety->id,
+            'received_by' => $user->id,
+            'gross_weight_kg' => 210.000,
+            'conformity_status' => 'conforming',
+            'processing_status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->followingRedirects()
+            ->post(route('calibrages.store'), [
+                'reception_id' => $reception->id,
+                'caliber_id' => $caliber->id,
+                'tare_type_id' => $tareType->id,
+                'tare_weight_kg' => 12.500,
+                'calibrated_at' => now()->format('Y-m-d H:i:s'),
+                'net_weight_kg' => 180.000,
+                'waste_weight_kg' => 15.000,
+            ]);
+
+        $response->assertOk();
+        $response->assertSee('Valider le calibrage', false);
+        $response->assertSee(Palox::query()->firstOrFail()->palox_number, false);
+    }
+
     public function test_last_palox_can_be_removed_before_calibration_finalization(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);

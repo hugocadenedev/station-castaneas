@@ -103,7 +103,7 @@ class CalibrationController extends Controller
                             'id' => (string) $palox->id,
                             'palox_number' => $palox->palox_number,
                             'label_url' => route('paloxes.label', $palox),
-                            'caliber_name' => $palox->calibration->caliber->name,
+                            'caliber_name' => $palox->calibration?->caliber?->name ?? 'Calibre indisponible',
                             'net_weight_kg' => number_format((float) $palox->initial_net_weight_kg, 3, ',', ' '),
                             'under_contract' => $palox->under_contract,
                         ])
