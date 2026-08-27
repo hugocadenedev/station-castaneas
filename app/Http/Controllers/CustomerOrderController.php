@@ -55,7 +55,11 @@ class CustomerOrderController extends Controller
         return view('modules.commandes.create', [
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(),
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
-            'varieties' => Variety::query()->where('is_active', true)->orderBy('name')->get(),
+            'varieties' => Variety::query()
+                ->where('is_active', true)
+                ->when($request->filled('fruit_id'), fn ($query) => $query->where('fruit_id', $request->integer('fruit_id')))
+                ->orderBy('name')
+                ->get(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'availablePaloxes' => $this->availablePaloxes(
                 $request->integer('fruit_id'),
