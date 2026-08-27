@@ -153,6 +153,16 @@ class ReceptionController extends Controller
         return [
             'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
             'fruits' => Fruit::query()->where('is_active', true)->with(['varieties' => fn ($query) => $query->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
+            'varietiesByFruit' => Variety::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+                ->groupBy('fruit_id')
+                ->map(fn ($varieties) => $varieties->map(fn (Variety $variety) => [
+                    'id' => (string) $variety->id,
+                    'name' => $variety->name,
+                ])->values()->all())
+                ->all(),
         ];
     }
 

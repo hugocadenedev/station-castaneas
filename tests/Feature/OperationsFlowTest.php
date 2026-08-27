@@ -602,7 +602,8 @@ class OperationsFlowTest extends TestCase
             ->get(route('stock.index', ['fruit_id' => $chataigne->id]))
             ->assertOk()
             ->assertSee($chataigneVariety->name)
-            ->assertDontSee($ceriseVariety->name);
+            ->assertSee($ceriseVariety->name)
+            ->assertSee('x-for="variety in availableVarieties"', false);
     }
 
     public function test_order_variety_filter_only_lists_varieties_for_selected_fruit(): void

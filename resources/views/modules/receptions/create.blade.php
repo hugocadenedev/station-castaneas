@@ -7,7 +7,20 @@
     </x-slot>
 
     <div>
-        <section class="surface rounded-2xl" x-data="{ fruitId: '{{ old('fruit_id') }}', conformityStatus: '{{ old('conformity_status', 'conforming') }}' }">
+        <section class="surface rounded-2xl" x-data="{
+            fruitId: @js((string) old('fruit_id', '')),
+            varietyId: @js((string) old('variety_id', '')),
+            varietiesByFruit: @js($varietiesByFruit),
+            availableVarieties: [],
+            conformityStatus: '{{ old('conformity_status', 'conforming') }}',
+            updateVarieties() {
+                this.availableVarieties = this.varietiesByFruit[this.fruitId] || [];
+
+                if (! this.availableVarieties.some((variety) => variety.id === this.varietyId)) {
+                    this.varietyId = '';
+                }
+            },
+        }" x-init="updateVarieties()">
             <div class="surface-body">
             <form method="POST" action="{{ route('receptions.store') }}" class="grid gap-5 2xl:grid-cols-2">
                 @csrf
@@ -28,7 +41,7 @@
                 </div>
                 <div>
                     <x-input-label for="fruit_id" :value="'Fruit'" />
-                    <select id="fruit_id" name="fruit_id" x-model="fruitId" class="input mt-1 block w-full" required>
+                    <select id="fruit_id" name="fruit_id" x-model="fruitId" x-on:change="updateVarieties()" class="input mt-1 block w-full" required>
                         <option value="">Sélectionner</option>
                         @foreach ($fruits as $fruit)
                             <option value="{{ $fruit->id }}" @selected((string) old('fruit_id') === (string) $fruit->id)>{{ $fruit->name }}</option>
@@ -38,13 +51,11 @@
                 </div>
                 <div>
                     <x-input-label for="variety_id" :value="'Variété'" />
-                    <select id="variety_id" name="variety_id" class="input mt-1 block w-full" required>
+                    <select id="variety_id" name="variety_id" x-model="varietyId" class="input mt-1 block w-full" required>
                         <option value="">Sélectionner</option>
-                        @foreach ($fruits as $fruit)
-                            @foreach ($fruit->varieties as $variety)
-                                <option x-show="String(fruitId || '{{ old('fruit_id') }}') === '{{ $fruit->id }}'" value="{{ $variety->id }}" @selected((string) old('variety_id') === (string) $variety->id)>{{ $variety->name }}</option>
-                            @endforeach
-                        @endforeach
+                        <template x-for="variety in availableVarieties" :key="variety.id">
+                            <option :value="variety.id" x-text="variety.name"></option>
+                        </template>
                     </select>
                     <x-input-error class="mt-2" :messages="$errors->get('variety_id')" />
                 </div>

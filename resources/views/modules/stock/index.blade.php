@@ -8,7 +8,20 @@
 
     <x-flash-status />
 
-    <div class="space-y-6" x-data="{ tab: '{{ request('tab', 'general') }}' }">
+    <div class="space-y-6" x-data="{
+        tab: '{{ request('tab', 'general') }}',
+        fruitId: @js((string) request('fruit_id', '')),
+        varietyId: @js((string) request('variety_id', '')),
+        varietiesByFruit: @js($varietiesByFruit),
+        availableVarieties: [],
+        updateVarieties() {
+            this.availableVarieties = this.varietiesByFruit[this.fruitId] || [];
+
+            if (! this.availableVarieties.some((variety) => variety.id === this.varietyId)) {
+                this.varietyId = '';
+            }
+        },
+    }" x-init="updateVarieties()">
         <div class="flex gap-2 border-b border-stone-200 pb-3">
             <button @click="tab = 'general'" :class="tab === 'general' ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-300'" class="rounded-lg border px-4 py-2 text-sm font-semibold">Stock général</button>
             <button @click="tab = 'non-conforming'" :class="tab === 'non-conforming' ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-300'" class="rounded-lg border px-4 py-2 text-sm font-semibold">Non conformes</button>
@@ -25,7 +38,7 @@
                                 <div class="grid gap-4">
                                     <div>
                                         <x-input-label for="fruit_id" :value="'Fruit'" />
-                                        <select id="fruit_id" name="fruit_id" onchange="this.form.submit()" class="input mt-1 w-full">
+                                        <select id="fruit_id" name="fruit_id" x-model="fruitId" x-on:change="updateVarieties()" class="input mt-1 w-full">
                                             <option value="">Tous les fruits</option>
                                             @foreach ($fruits as $fruit)
                                                 <option value="{{ $fruit->id }}" @selected((string) request('fruit_id') === (string) $fruit->id)>{{ $fruit->name }}</option>
@@ -43,11 +56,11 @@
                                     </div>
                                     <div>
                                         <x-input-label for="variety_id" :value="'Variété'" />
-                                        <select id="variety_id" name="variety_id" class="input mt-1 w-full">
+                                        <select id="variety_id" name="variety_id" x-model="varietyId" class="input mt-1 w-full">
                                             <option value="">Toutes les variétés</option>
-                                            @foreach ($varieties as $variety)
-                                                <option value="{{ $variety->id }}" @selected((string) request('variety_id') === (string) $variety->id)>{{ $variety->name }}</option>
-                                            @endforeach
+                                            <template x-for="variety in availableVarieties" :key="variety.id">
+                                                <option :value="variety.id" x-text="variety.name"></option>
+                                            </template>
                                         </select>
                                     </div>
                                 </div>

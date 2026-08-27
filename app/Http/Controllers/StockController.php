@@ -75,11 +75,16 @@ class StockController extends Controller
             'nonConformingReceptions' => $nonConformingQuery->paginate(15, ['*'], 'non_conforming_page')->withQueryString(),
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
             'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
-            'varieties' => Variety::query()
+            'varietiesByFruit' => Variety::query()
                 ->where('is_active', true)
-                ->when($request->filled('fruit_id'), fn ($query) => $query->where('fruit_id', $request->integer('fruit_id')))
                 ->orderBy('name')
-                ->get(),
+                ->get()
+                ->groupBy('fruit_id')
+                ->map(fn ($varieties) => $varieties->map(fn (Variety $variety) => [
+                    'id' => (string) $variety->id,
+                    'name' => $variety->name,
+                ])->values()->all())
+                ->all(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
