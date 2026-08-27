@@ -120,7 +120,7 @@ class ReceptionController extends Controller
 
         return Pdf::loadView('pdf.reception-label', [
             'reception' => $reception->load(['supplier', 'fruit', 'variety', 'operator']),
-        ])->setPaper([0, 0, 226.77, 141.73])->stream($reception->reception_number.'.pdf');
+        ])->setPaper([0, 0, 283.46, 425.20])->stream($reception->reception_number.'.pdf');
     }
 
     public function destroy(Request $request, Reception $reception): RedirectResponse

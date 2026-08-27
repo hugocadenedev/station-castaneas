@@ -10,9 +10,9 @@ use Illuminate\Support\Collection;
 
 class ReferenceNumberService
 {
-    public function makeReceptionNumber(CarbonInterface $receivedAt, int $receptionId): string
+    public function makeReceptionNumber(int $receptionId): string
     {
-        return sprintf('REC-%s-%04d', $receivedAt->format('Ymd'), $receptionId);
+        return sprintf('%04d', $receptionId);
     }
 
     public function makePaloxNumber(CarbonInterface $labeledAt, int $paloxId): string
@@ -51,7 +51,7 @@ class ReferenceNumberService
     {
         if (! $reception->reception_number || str_starts_with($reception->reception_number, 'TMP-REC-')) {
             $reception->forceFill([
-                'reception_number' => $this->makeReceptionNumber($reception->received_at, $reception->id),
+                'reception_number' => $this->makeReceptionNumber($reception->id),
             ])->save();
         }
 

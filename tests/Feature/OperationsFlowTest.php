@@ -51,9 +51,14 @@ class OperationsFlowTest extends TestCase
 
         $reception = Reception::query()->firstOrFail();
 
-        $this->assertStringStartsWith('REC-', $reception->reception_number);
+        $this->assertSame(sprintf('%04d', $reception->id), $reception->reception_number);
         $this->assertSame('non_conforming', $reception->conformity_status);
         $this->assertSame('stocked_non_conforming', $reception->processing_status);
+
+        $this->actingAs($user)
+            ->get(route('receptions.label', $reception))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
     }
 
     public function test_reception_can_be_created_without_gross_weight_and_completed_later(): void
