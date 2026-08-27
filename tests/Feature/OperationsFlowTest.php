@@ -454,6 +454,13 @@ class OperationsFlowTest extends TestCase
         $this->assertSame('exhausted', $palox->availability_status);
         $this->assertFalse($palox->under_contract);
 
+        $reception->update(['processing_status' => 'calibrated']);
+
+        $this->actingAs($user)
+            ->get(route('stock.index'))
+            ->assertOk()
+            ->assertSee('Sans calibre (déchet)');
+
         $this->actingAs($user)
             ->get(route('stock.show', $palox))
             ->assertOk()
