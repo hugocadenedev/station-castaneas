@@ -90,6 +90,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/backoffice/users', [BackofficeController::class, 'storeUser'])->name('backoffice.users.store');
         Route::patch('/backoffice/users/{user}', [BackofficeController::class, 'updateUser'])->name('backoffice.users.update');
         Route::delete('/backoffice/users/{user}', [BackofficeController::class, 'destroyUser'])->name('backoffice.users.destroy');
+        Route::get('/calibrages/paloxes/{palox}/edit', [CalibrationController::class, 'editPalox'])->name('calibrages.paloxes.edit');
+        Route::patch('/calibrages/paloxes/{palox}', [CalibrationController::class, 'updatePalox'])->name('calibrages.paloxes.update');
+        Route::delete('/calibrages/paloxes/{palox}', [CalibrationController::class, 'destroyPalox'])->name('calibrages.paloxes.destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

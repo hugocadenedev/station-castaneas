@@ -19,6 +19,7 @@
         varietyName: '',
         fruitName: '',
         caliberId: @js((string) old('caliber_id', '')),
+        netWeight: @js((string) old('net_weight_kg', '')),
         availableCalibers: [],
         calibersByFruit: @js($calibersByFruit),
         savedPaloxesByReception: @js($savedPaloxesByReception),
@@ -61,6 +62,9 @@
             }
 
             this.tareWeight = selectedOption.dataset.weightKg || '0.000';
+        },
+        isWasteOnly() {
+            return Number(this.netWeight || 0) === 0;
         },
     }" x-init="$nextTick(() => { updateReceptionDetails(); updateTareWeight(); })">
         <section class="surface rounded-2xl">
@@ -106,7 +110,7 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <x-input-label for="caliber_id" :value="'Calibre'" />
-                            <select id="caliber_id" name="caliber_id" x-model="caliberId" class="input mt-1 block w-full" required>
+                            <select id="caliber_id" name="caliber_id" x-model="caliberId" x-bind:disabled="isWasteOnly()" class="input mt-1 block w-full">
                                 <option value="">Sélectionner</option>
                                 <template x-for="caliber in availableCalibers" :key="caliber.id">
                                     <option :value="caliber.id" x-text="caliber.name"></option>
@@ -138,7 +142,7 @@
                         </div>
                         <div>
                             <x-input-label for="net_weight_kg" :value="'Poids net (kg)'" />
-                            <x-text-input id="net_weight_kg" name="net_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('net_weight_kg')" />
+                            <x-text-input id="net_weight_kg" name="net_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="netWeight" x-on:input="if (isWasteOnly()) caliberId = ''" />
                             <x-input-error class="mt-2" :messages="$errors->get('net_weight_kg')" />
                         </div>
                         <div>

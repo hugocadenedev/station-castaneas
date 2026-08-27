@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Calibration;
 use App\Models\Caliber;
+use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Fruit;
 use App\Models\Palox;
@@ -430,7 +431,6 @@ class OperationsFlowTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('calibrages.store'), [
             'reception_id' => $reception->id,
-            'caliber_id' => $caliber->id,
             'tare_type_id' => $tareType->id,
             'tare_weight_kg' => 12.500,
             'calibrated_at' => now()->format('Y-m-d H:i:s'),
@@ -445,6 +445,7 @@ class OperationsFlowTest extends TestCase
 
         $this->assertSame('0.000', $calibration->net_weight_kg);
         $this->assertSame('200.000', $calibration->waste_weight_kg);
+        $this->assertNull($calibration->caliber_id);
         $this->assertSame('0.000', $palox->initial_net_weight_kg);
         $this->assertSame('0.000', $palox->remaining_net_weight_kg);
         $this->assertSame('exhausted', $palox->availability_status);
@@ -652,6 +653,10 @@ class OperationsFlowTest extends TestCase
 
         $user = User::factory()->create();
         $user->assignRole('operateur');
+        $customer = Customer::query()->create([
+            'name' => 'Client reference test',
+            'is_active' => true,
+        ]);
 
         $supplier = Supplier::query()->firstOrFail();
         $fruit = Fruit::query()->firstOrFail();
@@ -700,7 +705,7 @@ class OperationsFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->post(route('commandes.store'), [
-            'client_name' => 'Client Test',
+            'customer_id' => $customer->id,
             'order_number' => '',
             'ordered_at' => now()->format('Y-m-d H:i:s'),
             'lines' => [
@@ -714,6 +719,8 @@ class OperationsFlowTest extends TestCase
         $order = CustomerOrder::query()->firstOrFail();
 
         $this->assertStringStartsWith('CMD-', $order->order_number);
+        $this->assertSame($customer->id, $order->customer_id);
+        $this->assertSame($customer->name, $order->client_name);
         $this->assertSame('0.000', $palox->remaining_net_weight_kg);
         $this->assertSame('exhausted', $palox->availability_status);
         $this->assertSame(100.0, (float) $order->paloxes()->firstOrFail()->pivot->picked_net_weight_kg);

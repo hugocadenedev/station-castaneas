@@ -244,7 +244,7 @@
                     <span class="section-label">Calibre</span>
                 </div>
                 <div class="section-content">
-                    <span class="section-value caliber-value">{{ $palox->calibration->caliber->name }}</span>
+                    <span class="section-value caliber-value">{{ $palox->calibration->caliber?->name ?? 'Sans calibre' }}</span>
                 </div>
                 <div class="section-clear"></div>
             </div>

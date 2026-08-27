@@ -120,7 +120,7 @@ class CalibrationController extends Controller
     {
         $validated = $request->validate([
             'reception_id' => ['required', 'exists:receptions,id'],
-            'caliber_id' => ['required', 'exists:calibers,id'],
+            'caliber_id' => ['nullable', 'exists:calibers,id'],
             'tare_type_id' => ['required', 'exists:tare_types,id'],
             'tare_weight_kg' => ['required', 'numeric', 'min:0'],
             'calibrated_at' => ['required', 'date'],
@@ -137,15 +137,23 @@ class CalibrationController extends Controller
             ]);
         }
 
+        if ((float) $validated['net_weight_kg'] > 0 && empty($validated['caliber_id'])) {
+            throw ValidationException::withMessages([
+                'caliber_id' => 'Le calibre est obligatoire pour un poids net supérieur à zéro.',
+            ]);
+        }
+
         DB::transaction(function () use ($request, $validated) {
             $reception = Reception::query()->lockForUpdate()->findOrFail($validated['reception_id']);
-            $caliber = Caliber::query()->findOrFail($validated['caliber_id']);
+            $caliber = ! empty($validated['caliber_id'])
+                ? Caliber::query()->findOrFail($validated['caliber_id'])
+                : null;
 
             if ($reception->isNonConforming() || $reception->processing_status !== 'pending') {
                 abort(422, 'Cette reception ne peut pas etre calibree.');
             }
 
-            if ((int) $caliber->fruit_id !== (int) $reception->fruit_id) {
+            if ($caliber && (int) $caliber->fruit_id !== (int) $reception->fruit_id) {
                 throw ValidationException::withMessages([
                     'caliber_id' => 'Le calibre sélectionné ne correspond pas au fruit de la réception.',
                 ]);
@@ -188,7 +196,7 @@ class CalibrationController extends Controller
             abort(422, 'Cette reception ne peut pas etre finalisee.');
         }
 
-        if (! $reception->paloxes()->exists()) {
+        if (! $reception->calibrations()->exists()) {
             throw ValidationException::withMessages([
                 'reception_id' => 'Ajoute au moins un palox avant de valider le calibrage.',
             ]);
@@ -205,6 +213,112 @@ class CalibrationController extends Controller
             ->log('Validation finale du calibrage');
 
         return redirect()->route('calibrages.index')->with('status', 'Calibrage valide avec succes.');
+    }
+
+    public function editPalox(Palox $palox): View
+    {
+        $palox->load(['reception.fruit', 'calibration.caliber', 'calibration.tareType']);
+
+        return view('modules.calibrages.edit-palox', [
+            'palox' => $palox,
+            'calibers' => Caliber::query()
+                ->where('fruit_id', $palox->reception->fruit_id)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get(),
+            'tareTypes' => TareType::query()->where('is_active', true)->orderBy('label')->get(),
+            'manualTareTypeId' => $this->manualTareTypeId(),
+        ]);
+    }
+
+    public function updatePalox(Request $request, Palox $palox): RedirectResponse
+    {
+        $validated = $request->validate([
+            'caliber_id' => ['nullable', 'exists:calibers,id'],
+            'tare_type_id' => ['required', 'exists:tare_types,id'],
+            'tare_weight_kg' => ['required', 'numeric', 'min:0'],
+            'calibrated_at' => ['required', 'date'],
+            'net_weight_kg' => ['required', 'numeric', 'min:0'],
+            'waste_weight_kg' => ['required', 'numeric', 'min:0'],
+            'under_contract' => ['nullable', 'boolean'],
+        ]);
+
+        if ((float) $validated['net_weight_kg'] > 0 && empty($validated['caliber_id'])) {
+            throw ValidationException::withMessages([
+                'caliber_id' => 'Le calibre est obligatoire pour un poids net supérieur à zéro.',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $validated, $palox) {
+            $palox->load(['calibration', 'orders']);
+            $caliber = ! empty($validated['caliber_id']) ? Caliber::query()->findOrFail($validated['caliber_id']) : null;
+
+            if ($caliber && (int) $caliber->fruit_id !== (int) $palox->reception->fruit_id) {
+                throw ValidationException::withMessages([
+                    'caliber_id' => 'Le calibre sélectionné ne correspond pas au fruit de la réception.',
+                ]);
+            }
+
+            $pickedWeight = (float) $palox->orders->sum(fn ($order) => (float) $order->pivot->picked_net_weight_kg);
+            $newNetWeight = (float) $validated['net_weight_kg'];
+
+            if ($newNetWeight < $pickedWeight) {
+                throw ValidationException::withMessages([
+                    'net_weight_kg' => 'Le poids net ne peut pas être inférieur au poids déjà prélevé.',
+                ]);
+            }
+
+            $calibration = $palox->calibration;
+            $calibration->update([
+                'caliber_id' => $validated['caliber_id'] ?? null,
+                'tare_type_id' => $validated['tare_type_id'],
+                'tare_weight_kg' => $validated['tare_weight_kg'],
+                'calibrated_at' => $validated['calibrated_at'],
+                'net_weight_kg' => $validated['net_weight_kg'],
+                'waste_weight_kg' => $validated['waste_weight_kg'],
+            ]);
+
+            $remainingWeight = round($newNetWeight - $pickedWeight, 3);
+            $palox->initial_net_weight_kg = $validated['net_weight_kg'];
+            $palox->remaining_net_weight_kg = $remainingWeight;
+            $palox->under_contract = (bool) ($validated['under_contract'] ?? false);
+            $palox->availability_status = $remainingWeight === 0.0
+                ? 'exhausted'
+                : ($remainingWeight < $newNetWeight ? 'partial' : 'available');
+            $palox->labeled_at = $validated['calibrated_at'];
+            $palox->save();
+        });
+
+        return redirect()->route('calibrages.show', $palox->reception_id)->with('status', 'Palox modifié avec succès.');
+    }
+
+    public function destroyPalox(Palox $palox): RedirectResponse
+    {
+        $receptionId = $palox->reception_id;
+
+        if ($palox->orders()->exists()) {
+            throw ValidationException::withMessages([
+                'palox' => 'Ce palox ne peut pas être supprimé car il est lié à une commande.',
+            ]);
+        }
+
+        $hasRemainingCalibrations = DB::transaction(function () use ($palox, $receptionId) {
+            $calibration = $palox->calibration;
+            $palox->delete();
+            $calibration?->delete();
+
+            $reception = Reception::query()->findOrFail($receptionId);
+            $hasRemainingCalibrations = $reception->calibrations()->exists();
+            if (! $hasRemainingCalibrations) {
+                $reception->update(['processing_status' => 'pending']);
+            }
+
+            return $hasRemainingCalibrations;
+        });
+
+        return redirect()
+            ->route($hasRemainingCalibrations ? 'calibrages.show' : 'calibrages.create', $hasRemainingCalibrations ? ['reception' => $receptionId] : ['reception_id' => $receptionId])
+            ->with('status', 'Palox supprimé avec succès.');
     }
 
     public function destroyLastPalox(Request $request, Reception $reception): RedirectResponse
