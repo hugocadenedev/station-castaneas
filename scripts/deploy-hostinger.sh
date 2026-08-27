@@ -19,7 +19,11 @@ echo "==> Clearing stale Laravel bootstrap caches"
 rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
 
 echo "==> Installing PHP dependencies"
-"$PHP_BIN" "$COMPOSER_BIN" install --no-dev --optimize-autoloader
+"$PHP_BIN" "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-scripts
+
+echo "==> Rebuilding Laravel package discovery"
+rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
+"$PHP_BIN" artisan package:discover --ansi
 
 echo "==> Publishing Laravel public files"
 cd "$PUBLIC_ROOT"
