@@ -105,6 +105,7 @@ class CalibrationController extends Controller
                             'label_url' => route('paloxes.label', $palox),
                             'caliber_name' => $palox->calibration?->caliber?->name ?? 'Calibre indisponible',
                             'net_weight_kg' => number_format((float) $palox->initial_net_weight_kg, 3, ',', ' '),
+                            'waste_weight_kg' => number_format((float) $palox->calibration?->waste_weight_kg, 3, ',', ' '),
                             'under_contract' => $palox->under_contract,
                         ])
                         ->all(),
@@ -126,10 +127,12 @@ class CalibrationController extends Controller
             'calibrated_at' => ['required', 'date'],
             'net_weight_kg' => ['nullable', 'numeric', 'min:0'],
             'waste_weight_kg' => ['required', 'numeric', 'min:0'],
-            'under_contract' => ['nullable', 'boolean'],
         ]);
 
         $validated['net_weight_kg'] = $validated['net_weight_kg'] ?? 0;
+        if ((float) $validated['waste_weight_kg'] > 1.0) {
+            $validated['caliber_id'] = null;
+        }
 
         if ((float) $validated['net_weight_kg'] === 0.0 && (float) $validated['waste_weight_kg'] === 0.0) {
             throw ValidationException::withMessages([
@@ -137,7 +140,7 @@ class CalibrationController extends Controller
             ]);
         }
 
-        if ((float) $validated['net_weight_kg'] > 0 && empty($validated['caliber_id'])) {
+        if ((float) $validated['waste_weight_kg'] <= 1.0 && (float) $validated['net_weight_kg'] > 0 && empty($validated['caliber_id'])) {
             throw ValidationException::withMessages([
                 'caliber_id' => 'Le calibre est obligatoire pour un poids net supérieur à zéro.',
             ]);
@@ -171,7 +174,7 @@ class CalibrationController extends Controller
                 'palox_number' => 'TMP-PAL-'.Str::upper(Str::random(10)),
                 'initial_net_weight_kg' => $validated['net_weight_kg'],
                 'remaining_net_weight_kg' => $validated['net_weight_kg'],
-                'under_contract' => (bool) ($validated['under_contract'] ?? false),
+                'under_contract' => false,
                 'availability_status' => 'available',
                 'labeled_at' => $validated['calibrated_at'],
             ]);
@@ -243,7 +246,11 @@ class CalibrationController extends Controller
             'under_contract' => ['nullable', 'boolean'],
         ]);
 
-        if ((float) $validated['net_weight_kg'] > 0 && empty($validated['caliber_id'])) {
+        if ((float) $validated['waste_weight_kg'] > 1.0) {
+            $validated['caliber_id'] = null;
+        }
+
+        if ((float) $validated['waste_weight_kg'] <= 1.0 && (float) $validated['net_weight_kg'] > 0 && empty($validated['caliber_id'])) {
             throw ValidationException::withMessages([
                 'caliber_id' => 'Le calibre est obligatoire pour un poids net supérieur à zéro.',
             ]);

@@ -10,7 +10,7 @@
         </div>
     </x-slot>
 
-    <div class="mx-auto max-w-3xl">
+    <div class="mx-auto max-w-3xl" x-data="{ caliberId: @js((string) old('caliber_id', $palox->calibration->caliber_id)), wasteWeight: @js((string) old('waste_weight_kg', $palox->calibration->waste_weight_kg)), hasSignificantWaste() { return Number(this.wasteWeight || 0) > 1; } }" x-init="$nextTick(() => { if (hasSignificantWaste()) caliberId = ''; })">
         <section class="surface rounded-2xl">
             <div class="surface-body">
                 <form method="POST" action="{{ route('calibrages.paloxes.update', $palox) }}" class="grid gap-4">
@@ -19,7 +19,7 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <x-input-label for="caliber_id" :value="'Calibre'" />
-                            <select id="caliber_id" name="caliber_id" class="input mt-1 block w-full">
+                            <select id="caliber_id" name="caliber_id" x-model="caliberId" x-bind:disabled="hasSignificantWaste()" class="input mt-1 block w-full">
                                 <option value="">Sans calibre (déchet)</option>
                                 @foreach ($calibers as $caliber)
                                     <option value="{{ $caliber->id }}" @selected((string) old('caliber_id', $palox->calibration->caliber_id) === (string) $caliber->id)>{{ $caliber->name }}</option>
@@ -51,7 +51,7 @@
                         </div>
                         <div>
                             <x-input-label for="waste_weight_kg" :value="'Poids déchet (kg)'" />
-                            <x-text-input id="waste_weight_kg" name="waste_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('waste_weight_kg', $palox->calibration->waste_weight_kg)" required />
+                            <x-text-input id="waste_weight_kg" name="waste_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="wasteWeight" x-on:input="if (hasSignificantWaste()) caliberId = ''" required />
                             <x-input-error class="mt-2" :messages="$errors->get('waste_weight_kg')" />
                         </div>
                     </div>

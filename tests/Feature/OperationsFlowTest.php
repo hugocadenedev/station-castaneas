@@ -402,9 +402,11 @@ class OperationsFlowTest extends TestCase
         $response->assertOk();
         $response->assertSee('Valider le calibrage', false);
         $response->assertSee(Palox::query()->firstOrFail()->palox_number, false);
+        $response->assertSee('Déchet:', false);
+        $response->assertSee('15,000', false);
     }
 
-    public function test_calibration_can_be_saved_with_empty_net_weight_for_waste_only_palox(): void
+    public function test_calibration_with_waste_over_one_kg_clears_caliber(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
 
@@ -431,6 +433,7 @@ class OperationsFlowTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('calibrages.store'), [
             'reception_id' => $reception->id,
+            'caliber_id' => $caliber->id,
             'tare_type_id' => $tareType->id,
             'tare_weight_kg' => 12.500,
             'calibrated_at' => now()->format('Y-m-d H:i:s'),
@@ -449,6 +452,7 @@ class OperationsFlowTest extends TestCase
         $this->assertSame('0.000', $palox->initial_net_weight_kg);
         $this->assertSame('0.000', $palox->remaining_net_weight_kg);
         $this->assertSame('exhausted', $palox->availability_status);
+        $this->assertFalse($palox->under_contract);
 
         $this->actingAs($user)
             ->get(route('stock.show', $palox))
@@ -702,7 +706,7 @@ class OperationsFlowTest extends TestCase
             'tare_weight_kg' => 12.500,
             'calibrated_at' => now()->format('Y-m-d H:i:s'),
             'net_weight_kg' => 180.000,
-            'waste_weight_kg' => 40.000,
+            'waste_weight_kg' => 1.000,
         ]);
 
         $response->assertRedirect(route('calibrages.create'));

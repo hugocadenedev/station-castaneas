@@ -20,6 +20,7 @@
         fruitName: '',
         caliberId: @js((string) old('caliber_id', '')),
         netWeight: @js((string) old('net_weight_kg', '')),
+        wasteWeight: @js((string) old('waste_weight_kg', '0.000')),
         availableCalibers: [],
         calibersByFruit: @js($calibersByFruit),
         savedPaloxesByReception: @js($savedPaloxesByReception),
@@ -63,10 +64,10 @@
 
             this.tareWeight = selectedOption.dataset.weightKg || '0.000';
         },
-        isWasteOnly() {
-            return Number(this.netWeight || 0) === 0;
+        hasSignificantWaste() {
+            return Number(this.wasteWeight || 0) > 1;
         },
-    }" x-init="$nextTick(() => { updateReceptionDetails(); updateTareWeight(); })">
+    }" x-init="$nextTick(() => { updateReceptionDetails(); updateTareWeight(); if (hasSignificantWaste()) caliberId = ''; })">
         <section class="surface rounded-2xl">
             <div class="surface-body">
                 <form method="POST" action="{{ route('calibrages.store') }}" class="grid gap-4">
@@ -110,7 +111,7 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <x-input-label for="caliber_id" :value="'Calibre'" />
-                            <select id="caliber_id" name="caliber_id" x-model="caliberId" x-bind:disabled="isWasteOnly()" class="input mt-1 block w-full">
+                            <select id="caliber_id" name="caliber_id" x-model="caliberId" x-bind:disabled="hasSignificantWaste()" class="input mt-1 block w-full">
                                 <option value="">Sélectionner</option>
                                 <template x-for="caliber in availableCalibers" :key="caliber.id">
                                     <option :value="caliber.id" x-text="caliber.name"></option>
@@ -142,19 +143,15 @@
                         </div>
                         <div>
                             <x-input-label for="net_weight_kg" :value="'Poids net (kg)'" />
-                            <x-text-input id="net_weight_kg" name="net_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="netWeight" x-on:input="if (isWasteOnly()) caliberId = ''" />
+                            <x-text-input id="net_weight_kg" name="net_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="netWeight" />
                             <x-input-error class="mt-2" :messages="$errors->get('net_weight_kg')" />
                         </div>
                         <div>
                             <x-input-label for="waste_weight_kg" :value="'Poids déchet (kg)'" />
-                            <x-text-input id="waste_weight_kg" name="waste_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" :value="old('waste_weight_kg', '0.000')" required />
+                            <x-text-input id="waste_weight_kg" name="waste_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="wasteWeight" x-on:input="if (hasSignificantWaste()) caliberId = ''" required />
                             <x-input-error class="mt-2" :messages="$errors->get('waste_weight_kg')" />
                         </div>
                     </div>
-                    <label class="inline-flex items-center gap-2">
-                        <input type="checkbox" name="under_contract" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)]" @checked(old('under_contract'))>
-                        <span class="text-sm text-stone-700">Sous contrat</span>
-                    </label>
                     <div class="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-3 text-sm text-stone-600">
                         Chaque validation ajoute un palox au calibrage en cours. Les étiquettes deviennent disponibles juste après l'enregistrement, puis tu peux valider le calibrage une fois tous les palox saisis.
                     </div>
@@ -205,7 +202,6 @@
                                     <th>Palox</th>
                                     <th>Calibre</th>
                                     <th>Poids net</th>
-                                    <th>Contrat</th>
                                     <th>Étiquette</th>
                                 </tr>
                             </thead>
@@ -215,8 +211,7 @@
                                         <td data-label="Étape" class="font-semibold text-stone-800" x-text="`Palox ${index + 1}`"></td>
                                         <td data-label="Palox" class="font-semibold text-stone-800" x-text="palox.palox_number"></td>
                                         <td data-label="Calibre" x-text="palox.caliber_name"></td>
-                                        <td data-label="Poids net" x-text="`${palox.net_weight_kg} kg`"></td>
-                                        <td data-label="Contrat" x-text="palox.under_contract ? 'Oui' : 'Non'"></td>
+                                        <td data-label="Poids net"><div x-text="`${palox.net_weight_kg} kg`"></div><div class="text-xs text-stone-500" x-text="`Déchet: ${palox.waste_weight_kg} kg`"></div></td>
                                         <td data-label="Étiquette"><a :href="palox.label_url" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Imprimer</a></td>
                                     </tr>
                                 </template>
