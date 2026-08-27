@@ -449,6 +449,11 @@ class OperationsFlowTest extends TestCase
         $this->assertSame('0.000', $palox->initial_net_weight_kg);
         $this->assertSame('0.000', $palox->remaining_net_weight_kg);
         $this->assertSame('exhausted', $palox->availability_status);
+
+        $this->actingAs($user)
+            ->get(route('stock.show', $palox))
+            ->assertOk()
+            ->assertSee('Sans calibre (déchet)');
     }
 
     public function test_palox_number_generation_stays_unique_after_deleting_an_older_palox(): void

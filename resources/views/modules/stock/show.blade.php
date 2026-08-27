@@ -14,13 +14,13 @@
                 <h2 class="font-display text-2xl text-[var(--castaneas-ink)]">Origine</h2>
             </div>
             <div class="surface-body grid gap-3 text-sm leading-6 text-stone-700 sm:grid-cols-2">
-                <div><strong>Réception :</strong><div>{{ $palox->reception->reception_number }}</div></div>
-                <div><strong>ID fournisseur :</strong><div>{{ $palox->reception->supplier->supplier_code }}</div></div>
-                <div><strong>Fruit / Variété :</strong><div>{{ $palox->reception->fruit->name }} / {{ $palox->reception->variety->name }}</div></div>
-                <div><strong>Opérateur réception :</strong><div>{{ $palox->reception->operator->name }}</div></div>
-                <div><strong>Calibre :</strong><div>{{ $palox->calibration->caliber?->name ?? 'Sans calibre (déchet)' }}</div></div>
-                <div><strong>Tare :</strong><div>{{ number_format((float) $palox->calibration->tare_weight_kg, 3, ',', ' ') }} kg</div></div>
-                <div><strong>Opérateur calibrage :</strong><div>{{ $palox->calibration->operator->name }}</div></div>
+                <div><strong>Réception :</strong><div>{{ $palox->reception?->reception_number ?? 'Indisponible' }}</div></div>
+                <div><strong>ID fournisseur :</strong><div>{{ $palox->reception?->supplier?->supplier_code ?? 'Indisponible' }}</div></div>
+                <div><strong>Fruit / Variété :</strong><div>{{ $palox->reception?->fruit?->name ?? 'Indisponible' }} / {{ $palox->reception?->variety?->name ?? 'Indisponible' }}</div></div>
+                <div><strong>Opérateur réception :</strong><div>{{ $palox->reception?->operator?->name ?? 'Indisponible' }}</div></div>
+                <div><strong>Calibre :</strong><div>{{ $palox->calibration?->caliber?->name ?? 'Sans calibre (déchet)' }}</div></div>
+                <div><strong>Tare :</strong><div>{{ $palox->calibration ? number_format((float) $palox->calibration->tare_weight_kg, 3, ',', ' ').' kg' : 'Indisponible' }}</div></div>
+                <div><strong>Opérateur calibrage :</strong><div>{{ $palox->calibration?->operator?->name ?? 'Indisponible' }}</div></div>
                 <div><strong>État :</strong><div>{{ $palox->availability_status === 'reserved' ? 'Réservé' : ($palox->availability_status === 'partial' ? 'Partiel' : ($palox->availability_status === 'exhausted' ? 'Épuisé' : 'Disponible')) }}</div></div>
             </div>
         </section>
@@ -34,7 +34,7 @@
                 @forelse ($palox->orders as $order)
                     <li class="border-b border-stone-100 pb-3 last:border-b-0 last:pb-0">
                         <strong>{{ $order->order_number }}</strong> - {{ $order->client_name }}
-                        <div class="text-xs text-stone-500">Prélevé: {{ number_format((float) $order->pivot->picked_net_weight_kg, 3, ',', ' ') }} kg par {{ $order->operator->name }}</div>
+                        <div class="text-xs text-stone-500">Prélevé: {{ number_format((float) $order->pivot->picked_net_weight_kg, 3, ',', ' ') }} kg par {{ $order->operator?->name ?? 'Utilisateur indisponible' }}</div>
                     </li>
                 @empty
                     <li>Aucune commande liée pour le moment.</li>
