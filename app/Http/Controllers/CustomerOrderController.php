@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caliber;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
+use App\Models\Fruit;
 use App\Models\Palox;
 use App\Models\Variety;
 use App\Services\ReferenceNumberService;
 use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -51,8 +54,14 @@ class CustomerOrderController extends Controller
     {
         return view('modules.commandes.create', [
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(),
+            'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
             'varieties' => Variety::query()->where('is_active', true)->orderBy('name')->get(),
-            'availablePaloxes' => $this->availablePaloxes($request->integer('variety_id')),
+            'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'availablePaloxes' => $this->availablePaloxes(
+                $request->integer('fruit_id'),
+                $request->integer('variety_id'),
+                $request->integer('caliber_id'),
+            ),
         ]);
     }
 
@@ -74,13 +83,19 @@ class CustomerOrderController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => ['nullable', 'exists:customers,id'],
-            'client_name' => ['nullable', 'required_without:customer_id', 'string', 'max:255'],
+            'client_name' => ['nullable', 'string', 'max:255'],
             'order_number' => ['nullable', 'string', 'max:255', 'unique:customer_orders,order_number'],
             'ordered_at' => ['required', 'date'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.palox_id' => ['required', 'distinct', 'exists:paloxes,id'],
             'lines.*.picked_net_weight_kg' => ['nullable', 'numeric', 'gt:0'],
         ]);
+
+        if (empty($validated['customer_id']) && blank($validated['client_name'] ?? null)) {
+            throw ValidationException::withMessages([
+                'client_name' => 'Sélectionne un client référencé ou renseigne le nom du client.',
+            ]);
+        }
 
         try {
             DB::transaction(function () use ($request, $validated) {
@@ -138,13 +153,15 @@ class CustomerOrderController extends Controller
         return redirect()->route('commandes.index')->with('status', 'Numero de commande mis a jour.');
     }
 
-    private function availablePaloxes(?int $varietyId)
+    private function availablePaloxes(?int $fruitId, ?int $varietyId, ?int $caliberId)
     {
         return Palox::query()
             ->with(['reception.fruit', 'reception.variety', 'reception.supplier', 'calibration.caliber'])
             ->whereIn('availability_status', ['available', 'partial'])
             ->whereHas('reception', fn ($query) => $query->where('processing_status', 'calibrated'))
+            ->when($fruitId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('fruit_id', $fruitId)))
             ->when($varietyId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('variety_id', $varietyId)))
+            ->when($caliberId, fn ($query) => $query->whereHas('calibration', fn ($subQuery) => $subQuery->where('caliber_id', $caliberId)))
             ->orderBy('palox_number')
             ->get();
     }

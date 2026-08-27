@@ -116,14 +116,34 @@
                         </div>
                     </div>
 
-                    <div>
-                        <x-input-label for="variety_id" :value="'Filtre variété pour les palox'" />
-                        <select id="variety_id" name="variety_id" onchange="window.location='?variety_id='+this.value" class="input mt-1 block w-full">
-                            <option value="">Toutes les variétés</option>
-                            @foreach ($varieties as $variety)
-                                <option value="{{ $variety->id }}" @selected((string) request('variety_id') === (string) $variety->id)>{{ $variety->name }}</option>
-                            @endforeach
-                        </select>
+                    <div class="grid gap-4 2xl:grid-cols-3">
+                        <div>
+                            <x-input-label for="fruit_id" :value="'Filtre fruit pour les palox'" />
+                            <select id="fruit_id" name="fruit_id" onchange="const params = new URLSearchParams(window.location.search); params.set('fruit_id', this.value); window.location.search = params.toString();" class="input mt-1 block w-full">
+                                <option value="">Tous les fruits</option>
+                                @foreach ($fruits as $fruit)
+                                    <option value="{{ $fruit->id }}" @selected((string) request('fruit_id') === (string) $fruit->id)>{{ $fruit->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="variety_id" :value="'Filtre variété pour les palox'" />
+                            <select id="variety_id" name="variety_id" onchange="const params = new URLSearchParams(window.location.search); params.set('variety_id', this.value); window.location.search = params.toString();" class="input mt-1 block w-full">
+                                <option value="">Toutes les variétés</option>
+                                @foreach ($varieties as $variety)
+                                    <option value="{{ $variety->id }}" @selected((string) request('variety_id') === (string) $variety->id)>{{ $variety->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="caliber_id" :value="'Filtre calibre pour les palox'" />
+                            <select id="caliber_id" name="caliber_id" onchange="const params = new URLSearchParams(window.location.search); params.set('caliber_id', this.value); window.location.search = params.toString();" class="input mt-1 block w-full">
+                                <option value="">Tous les calibres</option>
+                                @foreach ($calibers as $caliber)
+                                    <option value="{{ $caliber->id }}" @selected((string) request('caliber_id') === (string) $caliber->id)>{{ $caliber->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="space-y-3">
