@@ -447,7 +447,7 @@
                             @csrf
                             <input type="text" name="name" placeholder="Nom" class="input w-full" required>
                             <input type="email" name="email" placeholder="E-mail" class="input w-full" required>
-                            <input type="password" name="password" placeholder="Mot de passe" class="input w-full" required>
+                            <input type="password" name="password" placeholder="Mot de passe (4 caractères minimum)" class="input w-full" minlength="4" required>
                             <select name="role" class="input w-full" required>
                                 @foreach ($roles as $role)
                                     <option value="{{ $role->name }}">{{ $role->name }}</option>
@@ -487,7 +487,7 @@
                                                     @endforeach
                                                 </select>
                                             </td>
-                                            <td data-label="Mot de passe"><input type="password" name="password" placeholder="Laisser vide pour conserver" class="input w-full"></td>
+                                            <td data-label="Mot de passe"><input type="password" name="password" placeholder="Laisser vide pour conserver" minlength="4" class="input w-full"></td>
                                             <td data-label="Statut">
                                                 <label class="inline-flex items-center gap-2 text-sm text-stone-700">
                                                     <input type="checkbox" name="is_active" value="1" class="rounded border-stone-300 text-[var(--castaneas-brown)] focus:ring-[var(--castaneas-brown)]" @checked($user->is_active)>

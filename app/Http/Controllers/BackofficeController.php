@@ -386,7 +386,7 @@ class BackofficeController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
-            'password' => [$creating ? 'required' : 'nullable', 'string', 'min:8'],
+            'password' => [$creating ? 'required' : 'nullable', 'string', 'min:4'],
             'role' => ['required', Rule::exists('roles', 'name')->where(fn ($query) => $query->where('guard_name', 'web'))],
             'is_active' => ['nullable', 'boolean'],
         ]);

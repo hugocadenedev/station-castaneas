@@ -16,6 +16,7 @@ use App\Models\Variety;
 use Database\Seeders\ReferenceDataSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
@@ -151,6 +152,25 @@ class OperationsFlowTest extends TestCase
             'ggn_code' => $ggnCode,
             'email' => $email,
         ]);
+    }
+
+    public function test_superadmin_can_create_user_with_a_four_character_password(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+        $email = 'four-character-password-'.Str::lower(Str::random(6)).'@example.test';
+
+        $response = $this->actingAs($user)->post(route('backoffice.users.store'), [
+            'name' => 'Utilisateur test',
+            'email' => $email,
+            'password' => '1234',
+            'role' => 'operateur',
+        ]);
+
+        $response->assertRedirect(route('backoffice.index', ['section' => 'utilisateurs']));
+        $this->assertTrue(Hash::check('1234', User::query()->where('email', $email)->value('password')));
     }
 
     public function test_supplier_creation_reports_a_clear_duplicate_identifier_message(): void
