@@ -19,6 +19,7 @@ echo "==> Clearing stale Laravel bootstrap caches"
 rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
 
 echo "==> Installing PHP dependencies"
+rm -rf vendor/composer
 "$PHP_BIN" "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-scripts
 
 echo "==> Rebuilding Laravel package discovery"
