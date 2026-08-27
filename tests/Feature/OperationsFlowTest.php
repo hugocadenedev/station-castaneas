@@ -456,6 +456,64 @@ class OperationsFlowTest extends TestCase
             ->assertSee('Sans calibre (déchet)');
     }
 
+    public function test_superadmin_can_reserve_a_palox_and_exclude_it_from_orders(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+        $supplier = Supplier::query()->firstOrFail();
+        $fruit = Fruit::query()->firstOrFail();
+        $variety = Variety::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $caliber = Caliber::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $tareType = TareType::query()->where('is_active', true)->firstOrFail();
+
+        $reception = Reception::query()->create([
+            'reception_number' => 'REC-TEST-RESERVED-01',
+            'received_at' => now(),
+            'supplier_id' => $supplier->id,
+            'fruit_id' => $fruit->id,
+            'variety_id' => $variety->id,
+            'received_by' => $user->id,
+            'gross_weight_kg' => 100.000,
+            'conformity_status' => 'conforming',
+            'processing_status' => 'calibrated',
+        ]);
+
+        $calibration = Calibration::query()->create([
+            'reception_id' => $reception->id,
+            'caliber_id' => $caliber->id,
+            'tare_type_id' => $tareType->id,
+            'tare_weight_kg' => 0,
+            'performed_by' => $user->id,
+            'calibrated_at' => now(),
+            'net_weight_kg' => 100.000,
+            'waste_weight_kg' => 0,
+        ]);
+
+        $palox = Palox::query()->create([
+            'reception_id' => $reception->id,
+            'calibration_id' => $calibration->id,
+            'created_by' => $user->id,
+            'palox_number' => 'PAL-TEST-RESERVED-01',
+            'initial_net_weight_kg' => 100.000,
+            'remaining_net_weight_kg' => 100.000,
+            'under_contract' => false,
+            'availability_status' => 'available',
+            'labeled_at' => now(),
+        ]);
+
+        $this->from(route('stock.show', $palox))
+            ->actingAs($user)
+            ->patch(route('stock.reservation.update', $palox), ['reserved' => '1'])
+            ->assertRedirect(route('stock.show', $palox));
+
+        $this->assertSame('reserved', $palox->fresh()->availability_status);
+        $this->actingAs($user)
+            ->get(route('commandes.create'))
+            ->assertDontSee($palox->palox_number);
+    }
+
     public function test_palox_number_generation_stays_unique_after_deleting_an_older_palox(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
