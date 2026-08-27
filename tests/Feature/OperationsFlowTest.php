@@ -153,6 +153,28 @@ class OperationsFlowTest extends TestCase
         ]);
     }
 
+    public function test_supplier_creation_reports_a_clear_duplicate_identifier_message(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+        $supplier = Supplier::query()->firstOrFail();
+
+        $response = $this->from(route('backoffice.index', ['section' => 'fournisseurs']))
+            ->actingAs($user)
+            ->post(route('backoffice.suppliers.store'), [
+                'name' => 'Nouveau fournisseur',
+                'supplier_code' => $supplier->supplier_code,
+                'ggn_code' => 'GGN-'.random_int(1000000000000, 9999999999999),
+            ]);
+
+        $response->assertRedirect(route('backoffice.index', ['section' => 'fournisseurs']));
+        $response->assertSessionHasErrors([
+            'supplier_code' => 'Cet ID fournisseur est déjà utilisé, y compris par un fournisseur archivé.',
+        ]);
+    }
+
     public function test_superadmin_can_delete_unused_supplier(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);

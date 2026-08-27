@@ -111,10 +111,15 @@
                         <form method="POST" action="{{ route('backoffice.suppliers.store') }}" class="space-y-4">
                             @csrf
                             <input type="text" name="name" placeholder="Nom" class="input w-full" required>
+                            <x-input-error :messages="$errors->get('name')" />
                             <input type="text" name="supplier_code" placeholder="ID fournisseur (saisie manuelle)" class="input w-full" required>
+                            <x-input-error :messages="$errors->get('supplier_code')" />
                             <input type="text" name="ggn_code" placeholder="Numéro GGN" class="input w-full" required>
+                            <x-input-error :messages="$errors->get('ggn_code')" />
                             <input type="email" name="email" placeholder="E-mail" class="input w-full">
+                            <x-input-error :messages="$errors->get('email')" />
                             <input type="text" name="phone" placeholder="Téléphone" class="input w-full">
+                            <x-input-error :messages="$errors->get('phone')" />
                             <button class="btn-primary">Ajouter le fournisseur</button>
                         </form>
                     </div>
