@@ -525,6 +525,22 @@ class OperationsFlowTest extends TestCase
             ->assertDontSee($palox->palox_number);
     }
 
+    public function test_stock_variety_filter_only_lists_varieties_for_selected_fruit(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $chataigne = Fruit::query()->where('name', 'Chataigne')->firstOrFail();
+        $chataigneVariety = Variety::query()->where('fruit_id', $chataigne->id)->where('name', 'Bouche Rouge')->firstOrFail();
+        $ceriseVariety = Variety::query()->where('name', 'Burlat')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('stock.index', ['fruit_id' => $chataigne->id]))
+            ->assertOk()
+            ->assertSee($chataigneVariety->name)
+            ->assertDontSee($ceriseVariety->name);
+    }
+
     public function test_palox_number_generation_stays_unique_after_deleting_an_older_palox(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);

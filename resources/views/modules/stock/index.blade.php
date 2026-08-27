@@ -25,7 +25,7 @@
                                 <div class="grid gap-4">
                                     <div>
                                         <x-input-label for="fruit_id" :value="'Fruit'" />
-                                        <select id="fruit_id" name="fruit_id" class="input mt-1 w-full">
+                                        <select id="fruit_id" name="fruit_id" onchange="this.form.submit()" class="input mt-1 w-full">
                                             <option value="">Tous les fruits</option>
                                             @foreach ($fruits as $fruit)
                                                 <option value="{{ $fruit->id }}" @selected((string) request('fruit_id') === (string) $fruit->id)>{{ $fruit->name }}</option>
