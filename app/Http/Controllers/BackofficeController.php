@@ -344,14 +344,13 @@ class BackofficeController extends Controller
             [
                 'name' => ['required', 'string', 'max:255'],
                 'supplier_code' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'supplier_code')->ignore($supplier?->id)],
-                'ggn_code' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'ggn_code')->ignore($supplier?->id)],
+                'ggn_code' => ['required', 'string', 'max:255'],
                 'email' => ['nullable', 'email', 'max:255'],
                 'phone' => ['nullable', 'string', 'max:30'],
                 'is_active' => ['nullable', 'boolean'],
             ],
             [
                 'supplier_code.unique' => 'Cet ID fournisseur est déjà utilisé, y compris par un fournisseur archivé.',
-                'ggn_code.unique' => 'Ce numéro GGN est déjà utilisé, y compris par un fournisseur archivé.',
             ],
         );
     }

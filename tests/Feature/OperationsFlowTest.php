@@ -175,6 +175,28 @@ class OperationsFlowTest extends TestCase
         ]);
     }
 
+    public function test_superadmin_can_create_suppliers_with_the_same_ggn_code(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+        $supplier = Supplier::query()->firstOrFail();
+        $supplierCode = 'FOU-'.random_int(100000, 999999);
+
+        $response = $this->actingAs($user)->post(route('backoffice.suppliers.store'), [
+            'name' => 'Fournisseur avec GGN partagé',
+            'supplier_code' => $supplierCode,
+            'ggn_code' => $supplier->ggn_code,
+        ]);
+
+        $response->assertRedirect(route('backoffice.index', ['section' => 'fournisseurs']));
+        $this->assertDatabaseHas('suppliers', [
+            'supplier_code' => $supplierCode,
+            'ggn_code' => $supplier->ggn_code,
+        ]);
+    }
+
     public function test_superadmin_can_delete_unused_supplier(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
