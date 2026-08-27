@@ -99,6 +99,7 @@
                                             <option value="">Tous les états</option>
                                             <option value="available" @selected(request('availability_status') === 'available')>Disponible</option>
                                             <option value="partial" @selected(request('availability_status') === 'partial')>Partiel</option>
+                                            <option value="reserved" @selected(request('availability_status') === 'reserved')>Réservé</option>
                                             <option value="exhausted" @selected(request('availability_status') === 'exhausted')>Épuisé</option>
                                         </select>
                                     </div>
@@ -149,6 +150,8 @@
                                             <span class="pill pill-ok">Disponible</span>
                                         @elseif ($palox->availability_status === 'partial')
                                             <span class="pill pill-warn">Partiel</span>
+                                        @elseif ($palox->availability_status === 'reserved')
+                                            <span class="pill pill-warn">Réservé</span>
                                         @else
                                             <span class="pill pill-alert">Épuisé</span>
                                         @endif

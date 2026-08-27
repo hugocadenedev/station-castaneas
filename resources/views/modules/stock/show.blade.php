@@ -6,6 +6,8 @@
         </div>
     </x-slot>
 
+    <x-flash-status />
+
     <div class="grid gap-6 2xl:grid-cols-2">
         <section class="surface rounded-2xl">
             <div class="surface-header">
@@ -16,9 +18,10 @@
                 <div><strong>ID fournisseur :</strong><div>{{ $palox->reception->supplier->supplier_code }}</div></div>
                 <div><strong>Fruit / Variété :</strong><div>{{ $palox->reception->fruit->name }} / {{ $palox->reception->variety->name }}</div></div>
                 <div><strong>Opérateur réception :</strong><div>{{ $palox->reception->operator->name }}</div></div>
-                <div><strong>Calibre :</strong><div>{{ $palox->calibration->caliber->name }}</div></div>
+                <div><strong>Calibre :</strong><div>{{ $palox->calibration->caliber?->name ?? 'Sans calibre (déchet)' }}</div></div>
                 <div><strong>Tare :</strong><div>{{ number_format((float) $palox->calibration->tare_weight_kg, 3, ',', ' ') }} kg</div></div>
                 <div><strong>Opérateur calibrage :</strong><div>{{ $palox->calibration->operator->name }}</div></div>
+                <div><strong>État :</strong><div>{{ $palox->availability_status === 'reserved' ? 'Réservé' : ($palox->availability_status === 'partial' ? 'Partiel' : ($palox->availability_status === 'exhausted' ? 'Épuisé' : 'Disponible')) }}</div></div>
             </div>
         </section>
 
@@ -40,4 +43,30 @@
             </div>
         </section>
     </div>
+
+    @if (auth()->user()->hasRole('superadmin'))
+        <section class="mt-6 surface rounded-2xl">
+            <div class="surface-body flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="font-display text-xl text-[var(--castaneas-ink)]">Réservation</h2>
+                    <p class="mt-1 text-sm text-stone-600">Un palox réservé n'est pas proposé lors de la création d'une commande.</p>
+                </div>
+                @if ($palox->availability_status === 'reserved')
+                    <form method="POST" action="{{ route('stock.reservation.update', $palox) }}">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="reserved" value="0">
+                        <button class="btn-secondary">Rendre disponible</button>
+                    </form>
+                @elseif ((float) $palox->remaining_net_weight_kg > 0)
+                    <form method="POST" action="{{ route('stock.reservation.update', $palox) }}">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="reserved" value="1">
+                        <button class="btn-primary">Réserver</button>
+                    </form>
+                @endif
+            </div>
+        </section>
+    @endif
 </x-app-layout>

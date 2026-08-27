@@ -8,6 +8,7 @@ use App\Models\Palox;
 use App\Models\Reception;
 use App\Models\Supplier;
 use App\Models\Variety;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -92,5 +93,39 @@ class StockController extends Controller
                 'orders.operator',
             ]),
         ]);
+    }
+
+    public function updateReservation(Request $request, Palox $palox): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reserved' => ['required', 'boolean'],
+        ]);
+
+        if ($validated['reserved']) {
+            if ((float) $palox->remaining_net_weight_kg === 0.0) {
+                return back()->withErrors(['palox' => 'Un palox épuisé ne peut pas être réservé.']);
+            }
+
+            $palox->update(['availability_status' => 'reserved']);
+
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($palox)
+                ->event('palox_reserved')
+                ->log('Réservation du palox');
+
+            return back()->with('status', 'Palox réservé : il ne sera plus proposé dans les commandes.');
+        }
+
+        $palox->refreshAvailabilityStatus();
+        $palox->save();
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($palox)
+            ->event('palox_released')
+            ->log('Remise à disposition du palox');
+
+        return back()->with('status', 'Palox remis à disposition des commandes.');
     }
 }
