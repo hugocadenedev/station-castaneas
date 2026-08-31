@@ -81,7 +81,7 @@
                                 <td data-label="Poids">{{ number_format((float) $palox->initial_net_weight_kg, 3, ',', ' ') }} kg<div class="text-xs text-stone-500">Déchet: {{ number_format((float) $palox->calibration->waste_weight_kg, 3, ',', ' ') }} kg</div></td>
                                 <td data-label="Tare">{{ $palox->calibration->tareType->label }}<div class="text-xs text-stone-500">{{ number_format((float) $palox->calibration->tare_weight_kg, 3, ',', ' ') }} kg</div></td>
                                 <td data-label="Opérateur">{{ $palox->calibration->operator->name }}</td>
-                                <td data-label="Étiquette"><a href="{{ route('paloxes.label', $palox) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a></td>
+                                <td data-label="Étiquette"><a href="{{ route('paloxes.label', $palox) }}" data-share-label="{{ $palox->palox_number }}.pdf" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a></td>
                                 @if (auth()->user()->hasRole('superadmin'))
                                     <td data-label="Administration" class="space-y-2"><a href="{{ route('calibrages.paloxes.edit', $palox) }}" class="block text-sm font-semibold text-[var(--castaneas-bordeaux)]">Modifier</a><form method="POST" action="{{ route('calibrages.paloxes.destroy', $palox) }}" onsubmit="return confirm('Supprimer ce palox et son calibrage ?');">@csrf @method('DELETE')<button class="text-sm font-semibold text-red-700">Supprimer</button></form></td>
                                 @endif

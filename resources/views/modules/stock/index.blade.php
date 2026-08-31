@@ -172,7 +172,7 @@
                                     <td data-label="Actions">
                                         <div class="flex flex-col gap-2">
                                             <a href="{{ route('stock.show', $palox) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Traçabilité</a>
-                                            <a href="{{ route('paloxes.label', $palox) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Réimprimer</a>
+                                            <a href="{{ route('paloxes.label', $palox) }}" data-share-label="{{ $palox->palox_number }}.pdf" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Réimprimer</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -216,7 +216,7 @@
                                     <td data-label="Origine">{{ $reception->supplier->supplier_code }}<div class="text-xs text-stone-500">{{ $reception->fruit->name }} - {{ $reception->variety->name }}</div></td>
                                     <td data-label="Poids brut">{{ $reception->gross_weight_kg !== null ? number_format((float) $reception->gross_weight_kg, 3, ',', ' ').' kg' : 'À renseigner' }}</td>
                                     <td data-label="Motif">{{ $reception->non_conformity_reason }}</td>
-                                    <td data-label="Actions"><a href="{{ route('receptions.label', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a></td>
+                                    <td data-label="Actions"><a href="{{ route('receptions.label', $reception) }}" data-share-label="{{ $reception->reception_number }}.pdf" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a></td>
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="px-4 py-6 text-center text-stone-500">Aucune réception non conforme.</td></tr>

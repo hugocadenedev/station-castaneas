@@ -75,7 +75,7 @@
                                 <td data-label="Actions">
                                     <div class="flex flex-wrap gap-2">
                                         <a href="{{ route('receptions.edit', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Modifier</a>
-                                        <a href="{{ route('receptions.label', $reception) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a>
+                                        <a href="{{ route('receptions.label', $reception) }}" data-share-label="{{ $reception->reception_number }}.pdf" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Étiquette</a>
                                         <form method="POST" action="{{ route('receptions.destroy', $reception) }}" onsubmit="return confirmReceptionDeletion('{{ $reception->reception_number }}');">
                                             @csrf
                                             @method('DELETE')

@@ -212,7 +212,7 @@
                                         <td data-label="Palox" class="font-semibold text-stone-800" x-text="palox.palox_number"></td>
                                         <td data-label="Calibre" x-text="palox.caliber_name"></td>
                                         <td data-label="Poids net"><div x-text="`${palox.net_weight_kg} kg`"></div><div class="text-xs text-stone-500" x-text="`Déchet: ${palox.waste_weight_kg} kg`"></div></td>
-                                        <td data-label="Étiquette"><a :href="palox.label_url" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Imprimer</a></td>
+                                        <td data-label="Étiquette"><a :href="palox.label_url" x-bind:data-share-label="`${palox.palox_number}.pdf`" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Imprimer</a></td>
                                     </tr>
                                 </template>
                             </tbody>
