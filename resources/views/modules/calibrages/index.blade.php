@@ -14,12 +14,18 @@
     <div class="space-y-6">
         <section class="surface overflow-hidden rounded-2xl">
             <div class="toolbar">
-                <form method="GET" class="grid w-full gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <form method="GET" class="grid w-full gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
                         <input type="text" name="reception_number" value="{{ request('reception_number') }}" placeholder="N° réception" class="input">
                         <select name="caliber_id" class="input">
                             <option value="">Tous les calibres</option>
                             @foreach ($calibers as $caliber)
                                 <option value="{{ $caliber->id }}" @selected((string) request('caliber_id') === (string) $caliber->id)>{{ $caliber->name }}</option>
+                            @endforeach
+                        </select>
+                        <select name="supplier_id" class="input">
+                            <option value="">Tous les fournisseurs</option>
+                            @foreach ($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->supplier_code }}</option>
                             @endforeach
                         </select>
                         <button class="btn-primary">Filtrer</button>

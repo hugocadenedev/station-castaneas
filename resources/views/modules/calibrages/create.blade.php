@@ -20,7 +20,7 @@
         fruitName: '',
         caliberId: @js((string) old('caliber_id', '')),
         netWeight: @js((string) old('net_weight_kg', '')),
-        wasteWeight: @js((string) old('waste_weight_kg', '0.000')),
+        wasteWeight: @js((string) old('waste_weight_kg', '0')),
         availableCalibers: [],
         calibersByFruit: @js($calibersByFruit),
         savedPaloxesByReception: @js($savedPaloxesByReception),
@@ -175,11 +175,11 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row">
-                        <form method="POST" x-bind:action="receptionId ? '{{ url('/receptions') }}/' + receptionId + '/calibrage/retirer-dernier' : '#'">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn-danger" x-bind:disabled="savedPaloxes.length === 0" x-bind:class="savedPaloxes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''" onclick="return confirm('Retirer le dernier palox saisi ?');">Supprimer le dernier palox</button>
-                        </form>
+                        <a
+                            :href="savedPaloxes.length === 0 ? '#' : '{{ url('/calibrages/paloxes') }}/' + savedPaloxes[savedPaloxes.length - 1].id + '/edit'"
+                            class="btn-secondary"
+                            x-bind:class="savedPaloxes.length === 0 ? 'pointer-events-none opacity-50' : ''"
+                        >Modifier le dernier palox</a>
                         <form method="POST" x-bind:action="receptionId ? '{{ url('/receptions') }}/' + receptionId + '/calibrage/finaliser' : '#'">
                             @csrf
                             <button type="submit" class="btn-primary" x-bind:disabled="savedPaloxes.length === 0" x-bind:class="savedPaloxes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''">Valider le calibrage</button>

@@ -6,7 +6,7 @@
                 <h1 class="font-display text-3xl leading-tight text-[var(--castaneas-ink)]">Modifier {{ $palox->palox_number }}</h1>
                 <div class="mt-2 text-sm text-stone-500">Réception {{ $palox->reception->reception_number }}</div>
             </div>
-            <a href="{{ route('calibrages.show', $palox->reception_id) }}" class="btn-secondary">Retour au calibrage</a>
+            <a href="{{ $backRoute }}" class="btn-secondary">Retour au calibrage</a>
         </div>
     </x-slot>
 
@@ -66,7 +66,7 @@
                     </label>
                     <div class="flex flex-col gap-3 sm:flex-row">
                         <button class="btn-primary">Enregistrer les modifications</button>
-                        <a href="{{ route('calibrages.show', $palox->reception_id) }}" class="btn-secondary">Annuler</a>
+                        <a href="{{ $backRoute }}" class="btn-secondary">Annuler</a>
                     </div>
                 </form>
             </div>

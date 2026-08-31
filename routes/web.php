@@ -26,7 +26,39 @@ Route::get('/dashboard', function () {
         ->with('paloxes')
         ->get();
 
+    $availablePaloxes = Palox::query()
+        ->whereIn('availability_status', ['available', 'partial'])
+        ->with(['reception.fruit', 'calibration.caliber'])
+        ->get();
+
+    $soldPaloxes = Palox::query()
+        ->whereHas('orders')
+        ->with(['reception.fruit', 'calibration.caliber', 'orders'])
+        ->get();
+
+    $buildFruitBreakdown = function ($paloxes, $weightResolver) {
+        return $paloxes
+            ->groupBy(fn ($palox) => $palox->reception->fruit->name)
+            ->map(function ($group) use ($weightResolver) {
+                $byCaliber = $group
+                    ->groupBy(fn ($palox) => $palox->calibration?->caliber?->name ?? 'Sans calibre')
+                    ->map(fn ($caliberGroup) => $caliberGroup->sum($weightResolver))
+                    ->sortKeys();
+
+                return [
+                    'total' => $byCaliber->sum(),
+                    'calibers' => $byCaliber,
+                ];
+            })
+            ->sortByDesc(fn ($fruit) => $fruit['total']);
+    };
+
+    $stockByFruit = $buildFruitBreakdown($availablePaloxes, fn ($palox) => (float) $palox->remaining_net_weight_kg);
+    $soldByFruit = $buildFruitBreakdown($soldPaloxes, fn ($palox) => (float) $palox->orders->sum('pivot.picked_net_weight_kg'));
+
     return view('dashboard', [
+        'stockByFruit' => $stockByFruit,
+        'soldByFruit' => $soldByFruit,
         'stats' => [
             'receptions_today' => Reception::query()->whereDate('received_at', today())->count(),
             'pending_receptions' => Reception::query()->where('processing_status', 'pending')->count(),

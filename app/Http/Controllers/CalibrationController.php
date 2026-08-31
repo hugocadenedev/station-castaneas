@@ -6,6 +6,7 @@ use App\Models\Calibration;
 use App\Models\Caliber;
 use App\Models\Palox;
 use App\Models\Reception;
+use App\Models\Supplier;
 use App\Models\TareType;
 use App\Services\ReferenceNumberService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -41,9 +42,14 @@ class CalibrationController extends Controller
             $query->whereHas('calibrations', fn ($subQuery) => $subQuery->where('caliber_id', $request->integer('caliber_id')));
         }
 
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->integer('supplier_id'));
+        }
+
         return view('modules.calibrages.index', [
             'receptions' => $query->orderByDesc('calibrations_max_calibrated_at')->paginate(15)->withQueryString(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
         ]);
     }
 
@@ -224,6 +230,7 @@ class CalibrationController extends Controller
 
         return view('modules.calibrages.edit-palox', [
             'palox' => $palox,
+            'backRoute' => $this->paloxBackRoute($palox),
             'calibers' => Caliber::query()
                 ->where('fruit_id', $palox->reception->fruit_id)
                 ->where('is_active', true)
@@ -296,7 +303,14 @@ class CalibrationController extends Controller
             $palox->save();
         });
 
-        return redirect()->route('calibrages.show', $palox->reception_id)->with('status', 'Palox modifié avec succès.');
+        return redirect()->to($this->paloxBackRoute($palox))->with('status', 'Palox modifié avec succès.');
+    }
+
+    private function paloxBackRoute(Palox $palox): string
+    {
+        return $palox->reception->processing_status === 'calibrated'
+            ? route('calibrages.show', $palox->reception_id)
+            : route('calibrages.create', ['reception_id' => $palox->reception_id]);
     }
 
     public function destroyPalox(Palox $palox): RedirectResponse

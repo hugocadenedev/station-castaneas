@@ -14,14 +14,7 @@
     <div class="space-y-6">
         <section class="surface overflow-hidden rounded-2xl">
             <div class="toolbar">
-                <form method="GET" class="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] w-full">
-                        <select name="customer_id" class="input">
-                            <option value="">Tous les clients référencés</option>
-                            @foreach ($customers as $customer)
-                                <option value="{{ $customer->id }}" @selected((string) request('customer_id') === (string) $customer->id)>{{ $customer->name }}</option>
-                            @endforeach
-                        </select>
-                        <input type="text" name="client_name" value="{{ request('client_name') }}" placeholder="Client hors liste" class="input">
+                <form method="GET" class="grid gap-3 md:grid-cols-[1fr_auto] w-full">
                         <input type="text" name="order_number" value="{{ request('order_number') }}" placeholder="Numéro de commande" class="input">
                         <button class="btn-primary">Filtrer</button>
                     </form>

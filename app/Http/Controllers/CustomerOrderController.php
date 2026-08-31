@@ -7,12 +7,12 @@ use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Fruit;
 use App\Models\Palox;
+use App\Models\Supplier;
 use App\Models\Variety;
 use App\Services\ReferenceNumberService;
 use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -32,28 +32,18 @@ class CustomerOrderController extends Controller
             ->with(['customer', 'operator', 'paloxes.reception.supplier', 'paloxes.reception.fruit', 'paloxes.reception.variety', 'paloxes.calibration.caliber'])
             ->latest('ordered_at');
 
-        if ($request->filled('customer_id')) {
-            $query->where('customer_id', $request->integer('customer_id'));
-        }
-
-        if ($request->filled('client_name')) {
-            $query->where('client_name', 'like', '%'.$request->string('client_name')->value().'%');
-        }
-
         if ($request->filled('order_number')) {
             $query->where('order_number', 'like', '%'.$request->string('order_number')->value().'%');
         }
 
         return view('modules.commandes.index', [
             'orders' => $query->paginate(15)->withQueryString(),
-            'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
     public function create(Request $request): View
     {
         return view('modules.commandes.create', [
-            'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(),
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
             'varieties' => Variety::query()
                 ->where('is_active', true)
@@ -61,10 +51,12 @@ class CustomerOrderController extends Controller
                 ->orderBy('name')
                 ->get(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
             'availablePaloxes' => $this->availablePaloxes(
                 $request->integer('fruit_id'),
                 $request->integer('variety_id'),
                 $request->integer('caliber_id'),
+                $request->integer('supplier_id'),
             ),
         ]);
     }
@@ -95,12 +87,6 @@ class CustomerOrderController extends Controller
             'lines.*.picked_net_weight_kg' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
-        if (empty($validated['customer_id']) && blank($validated['client_name'] ?? null)) {
-            throw ValidationException::withMessages([
-                'client_name' => 'Sélectionne un client référencé ou renseigne le nom du client.',
-            ]);
-        }
-
         try {
             DB::transaction(function () use ($request, $validated) {
                 $customer = ! empty($validated['customer_id'])
@@ -109,7 +95,7 @@ class CustomerOrderController extends Controller
 
                 $order = CustomerOrder::query()->create([
                     'customer_id' => $customer?->id,
-                    'client_name' => $customer?->name ?? $validated['client_name'],
+                    'client_name' => $customer?->name ?? ($validated['client_name'] ?: 'Client non renseigné'),
                     'order_number' => $validated['order_number'] ?: 'TMP-CMD-'.Str::upper(Str::random(10)),
                     'ordered_at' => $validated['ordered_at'],
                     'created_by' => $request->user()->id,
@@ -157,7 +143,7 @@ class CustomerOrderController extends Controller
         return redirect()->route('commandes.index')->with('status', 'Numero de commande mis a jour.');
     }
 
-    private function availablePaloxes(?int $fruitId, ?int $varietyId, ?int $caliberId)
+    private function availablePaloxes(?int $fruitId, ?int $varietyId, ?int $caliberId, ?int $supplierId = null)
     {
         return Palox::query()
             ->with(['reception.fruit', 'reception.variety', 'reception.supplier', 'calibration.caliber'])
@@ -166,6 +152,7 @@ class CustomerOrderController extends Controller
             ->when($fruitId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('fruit_id', $fruitId)))
             ->when($varietyId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('variety_id', $varietyId)))
             ->when($caliberId, fn ($query) => $query->whereHas('calibration', fn ($subQuery) => $subQuery->where('caliber_id', $caliberId)))
+            ->when($supplierId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('supplier_id', $supplierId)))
             ->orderBy('palox_number')
             ->get();
     }

@@ -59,6 +59,16 @@
         x-data="{
             catalog: @js($paloxCatalog),
             rows: @js($selectedPaloxes),
+            search: '',
+            filteredCatalog() {
+                const term = this.search.trim().toLowerCase();
+
+                if (! term) {
+                    return this.catalog;
+                }
+
+                return this.catalog.filter((entry) => entry.number.toLowerCase().includes(term));
+            },
             isSelected(paloxId) {
                 return this.rows.some((row) => row.palox_id === paloxId);
             },
@@ -87,39 +97,21 @@
                     @csrf
                     <div class="grid gap-4 2xl:grid-cols-2">
                         <div>
-                            <x-input-label for="customer_id" :value="'Client référencé'" />
-                            <select id="customer_id" name="customer_id" class="input mt-1 block w-full">
-                                <option value="">Client ponctuel / saisie libre</option>
-                                @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>{{ $customer->name }}</option>
-                                @endforeach
-                            </select>
-                            <x-input-error class="mt-2" :messages="$errors->get('customer_id')" />
-                        </div>
-                        <div>
-                            <x-input-label for="client_name" :value="'Nom client si hors liste'" />
-                            <x-text-input id="client_name" name="client_name" type="text" class="input mt-1 block w-full" :value="old('client_name')" />
-                            <x-input-error class="mt-2" :messages="$errors->get('client_name')" />
-                        </div>
-                    </div>
-
-                    <div class="grid gap-4 2xl:grid-cols-2">
-                        <div>
                             <x-input-label for="order_number" :value="'Numéro de commande'" />
-                            <x-text-input id="order_number" name="order_number" type="text" class="input mt-1 block w-full" :value="old('order_number')" />
+                            <x-text-input id="order_number" name="order_number" type="text" class="input mt-1 block w-full" :value="old('order_number', request('order_number'))" />
                             <x-input-error class="mt-2" :messages="$errors->get('order_number')" />
                         </div>
                         <div>
                             <x-input-label for="ordered_at" :value="'Date de commande'" />
-                            <x-text-input id="ordered_at" name="ordered_at" type="datetime-local" class="input mt-1 block w-full" :value="old('ordered_at', now()->format('Y-m-d\TH:i'))" required />
+                            <x-text-input id="ordered_at" name="ordered_at" type="datetime-local" class="input mt-1 block w-full" :value="old('ordered_at', request('ordered_at', now()->format('Y-m-d\TH:i')))" required />
                             <x-input-error class="mt-2" :messages="$errors->get('ordered_at')" />
                         </div>
                     </div>
 
-                    <div class="grid gap-4 2xl:grid-cols-3">
+                    <div class="grid gap-4 2xl:grid-cols-4">
                         <div>
                             <x-input-label for="fruit_id" :value="'Filtre fruit pour les palox'" />
-                            <select id="fruit_id" name="fruit_id" onchange="const params = new URLSearchParams(window.location.search); params.set('fruit_id', this.value); window.location.search = params.toString();" class="input mt-1 block w-full">
+                            <select id="fruit_id" name="fruit_id" onchange="applyPaloxFilter('fruit_id', this.value)" class="input mt-1 block w-full">
                                 <option value="">Tous les fruits</option>
                                 @foreach ($fruits as $fruit)
                                     <option value="{{ $fruit->id }}" @selected((string) request('fruit_id') === (string) $fruit->id)>{{ $fruit->name }}</option>
@@ -128,7 +120,7 @@
                         </div>
                         <div>
                             <x-input-label for="variety_id" :value="'Filtre variété pour les palox'" />
-                            <select id="variety_id" name="variety_id" onchange="const params = new URLSearchParams(window.location.search); params.set('variety_id', this.value); window.location.search = params.toString();" class="input mt-1 block w-full">
+                            <select id="variety_id" name="variety_id" onchange="applyPaloxFilter('variety_id', this.value)" class="input mt-1 block w-full">
                                 <option value="">Toutes les variétés</option>
                                 @foreach ($varieties as $variety)
                                     <option value="{{ $variety->id }}" @selected((string) request('variety_id') === (string) $variety->id)>{{ $variety->name }}</option>
@@ -137,10 +129,19 @@
                         </div>
                         <div>
                             <x-input-label for="caliber_id" :value="'Filtre calibre pour les palox'" />
-                            <select id="caliber_id" name="caliber_id" onchange="const params = new URLSearchParams(window.location.search); params.set('caliber_id', this.value); window.location.search = params.toString();" class="input mt-1 block w-full">
+                            <select id="caliber_id" name="caliber_id" onchange="applyPaloxFilter('caliber_id', this.value)" class="input mt-1 block w-full">
                                 <option value="">Tous les calibres</option>
                                 @foreach ($calibers as $caliber)
                                     <option value="{{ $caliber->id }}" @selected((string) request('caliber_id') === (string) $caliber->id)>{{ $caliber->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="supplier_id" :value="'Filtre fournisseur pour les palox'" />
+                            <select id="supplier_id" name="supplier_id" onchange="applyPaloxFilter('supplier_id', this.value)" class="input mt-1 block w-full">
+                                <option value="">Tous les fournisseurs</option>
+                                @foreach ($suppliers as $supplier)
+                                    <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->supplier_code }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -155,8 +156,11 @@
                                 </div>
                                 <div class="text-sm text-stone-500" x-text="rows.length ? `${rows.length} palox sélectionné(s)` : 'Aucun palox sélectionné'"></div>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="data-table tablet-stack">
+                            <div class="border-b border-stone-200 px-4 py-3">
+                                <input type="search" x-model="search" placeholder="Rechercher un numéro de palox…" class="input block w-full sm:max-w-xs">
+                            </div>
+                            <div class="hidden overflow-x-auto xl:block">
+                                <table class="data-table">
                                     <thead>
                                         <tr>
                                             <th>Palox</th>
@@ -168,7 +172,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-stone-100 bg-white">
-                                        <template x-for="entry in catalog" :key="entry.id">
+                                        <template x-for="entry in filteredCatalog()" :key="entry.id">
                                             <tr>
                                                 <td data-label="Palox" class="font-semibold text-stone-800" x-text="entry.number"></td>
                                                 <td data-label="Origine">
@@ -192,11 +196,35 @@
                                                 </td>
                                             </tr>
                                         </template>
-                                        <tr x-show="catalog.length === 0">
+                                        <tr x-show="filteredCatalog().length === 0">
                                             <td colspan="6" class="px-4 py-6 text-center text-stone-500">Aucun palox disponible pour ce filtre.</td>
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <div class="divide-y divide-stone-100 xl:hidden">
+                                <template x-for="entry in filteredCatalog()" :key="entry.id">
+                                    <div class="flex items-center gap-3 px-4 py-3">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                <span class="font-semibold text-stone-800" x-text="entry.number"></span>
+                                                <span :class="entry.statusClass" x-text="entry.status"></span>
+                                            </div>
+                                            <div class="mt-0.5 truncate text-xs text-stone-500" x-text="`${entry.supplier} · ${entry.fruit} - ${entry.variety} · ${entry.caliber}`"></div>
+                                            <div class="mt-0.5 text-xs font-medium text-stone-600" x-text="`${entry.remainingWeight} / ${entry.initialWeight} kg`"></div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="btn-secondary h-9 shrink-0 px-3 text-xs"
+                                            :disabled="isSelected(entry.id)"
+                                            :class="isSelected(entry.id) ? 'cursor-not-allowed opacity-50' : ''"
+                                            @click="addPalox(entry)"
+                                            x-text="isSelected(entry.id) ? 'Ajouté' : 'Ajouter'"
+                                        ></button>
+                                    </div>
+                                </template>
+                                <div x-show="filteredCatalog().length === 0" class="px-4 py-6 text-center text-sm text-stone-500">Aucun palox disponible pour ce filtre.</div>
                             </div>
                         </div>
 
@@ -238,4 +266,24 @@
             </div>
         </section>
     </div>
+
+    <script>
+        function applyPaloxFilter(field, value) {
+            const params = new URLSearchParams(window.location.search);
+            params.set(field, value);
+
+            const orderNumber = document.getElementById('order_number')?.value;
+            const orderedAt = document.getElementById('ordered_at')?.value;
+
+            if (orderNumber) {
+                params.set('order_number', orderNumber);
+            }
+
+            if (orderedAt) {
+                params.set('ordered_at', orderedAt);
+            }
+
+            window.location.search = params.toString();
+        }
+    </script>
 </x-app-layout>
