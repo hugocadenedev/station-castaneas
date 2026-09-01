@@ -87,6 +87,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/calibrages', [CalibrationController::class, 'store'])->name('calibrages.store');
     Route::delete('/receptions/{reception}/calibrage/retirer-dernier', [CalibrationController::class, 'destroyLastPalox'])->name('calibrages.destroy-last-palox');
     Route::post('/receptions/{reception}/calibrage/finaliser', [CalibrationController::class, 'finalize'])->name('calibrages.finalize');
+    Route::get('/calibrages/paloxes/{palox}/edit', [CalibrationController::class, 'editPalox'])->name('calibrages.paloxes.edit');
+    Route::patch('/calibrages/paloxes/{palox}', [CalibrationController::class, 'updatePalox'])->name('calibrages.paloxes.update');
+    Route::delete('/calibrages/paloxes/{palox}', [CalibrationController::class, 'destroyPalox'])->name('calibrages.paloxes.destroy');
     Route::get('/paloxes/{palox}/label', [CalibrationController::class, 'label'])->name('paloxes.label');
 
     Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
@@ -123,9 +126,6 @@ Route::middleware('auth')->group(function () {
         Route::patch('/backoffice/users/{user}', [BackofficeController::class, 'updateUser'])->name('backoffice.users.update');
         Route::delete('/backoffice/users/{user}', [BackofficeController::class, 'destroyUser'])->name('backoffice.users.destroy');
         Route::patch('/stock/{palox}/reservation', [StockController::class, 'updateReservation'])->name('stock.reservation.update');
-        Route::get('/calibrages/paloxes/{palox}/edit', [CalibrationController::class, 'editPalox'])->name('calibrages.paloxes.edit');
-        Route::patch('/calibrages/paloxes/{palox}', [CalibrationController::class, 'updatePalox'])->name('calibrages.paloxes.update');
-        Route::delete('/calibrages/paloxes/{palox}', [CalibrationController::class, 'destroyPalox'])->name('calibrages.paloxes.destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
