@@ -1,4 +1,6 @@
 <x-app-layout :dashboard-dark="true" :flush-content="true">
+    @php($isSuperadmin = $isSuperadmin ?? auth()->user()?->hasRole('superadmin'))
+
     <div class="min-h-screen px-4 py-6 sm:px-5 2xl:px-8" style="background: radial-gradient(circle at top left, #4b3b30 0%, #2a211d 42%, #1f1916 100%);">
         <section class="overflow-hidden rounded-3xl text-white" style="border: 1px solid #3b2a21; background: rgba(31, 25, 22, 0.72); box-shadow: 0 24px 70px rgba(45, 29, 23, 0.28); backdrop-filter: blur(4px);">
             <div class="border-b border-white/10 px-5 py-4 sm:px-6">
@@ -24,67 +26,69 @@
 
             <div class="grid gap-6 px-5 py-5 sm:px-6 xl:grid-cols-[minmax(0,1.4fr)_360px]">
                 <div class="space-y-5">
-                    <div class="grid gap-4 xl:grid-cols-2">
-                        <article class="rounded-3xl border border-white/10 p-5" style="background: #191311;">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Stock disponible</div>
-                                    <h4 class="mt-1 font-display text-2xl text-white">Par fruit</h4>
-                                </div>
-                                <a href="{{ route('stock.index') }}" class="text-sm font-semibold text-[#efc79c]">Voir le stock</a>
-                            </div>
-                            <div class="mt-5 space-y-4">
-                                @forelse ($stockByFruit as $fruitName => $fruitData)
-                                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                                        <div class="flex items-center justify-between gap-3">
-                                            <div class="font-semibold text-white">{{ $fruitName }}</div>
-                                            <div class="text-lg font-semibold text-white">{{ number_format($fruitData['total'], 0, ',', ' ') }} kg</div>
-                                        </div>
-                                        <div class="mt-3 flex flex-wrap gap-2">
-                                            @foreach ($fruitData['calibers'] as $caliberName => $weight)
-                                                <div class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-stone-200">
-                                                    <span class="font-semibold text-[#efc79c]">{{ $caliberName }}</span>
-                                                    <span>{{ number_format($weight, 0, ',', ' ') }} kg</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
+                    @if ($isSuperadmin)
+                        <div class="grid gap-4 xl:grid-cols-2">
+                            <article class="rounded-3xl border border-white/10 p-5" style="background: #191311;">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Stock disponible</div>
+                                        <h4 class="mt-1 font-display text-2xl text-white">Par fruit</h4>
                                     </div>
-                                @empty
-                                    <div class="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-stone-400">Aucun stock disponible pour le moment.</div>
-                                @endforelse
-                            </div>
-                        </article>
+                                    <a href="{{ route('stock.index') }}" class="text-sm font-semibold text-[#efc79c]">Voir le stock</a>
+                                </div>
+                                <div class="mt-5 space-y-4">
+                                    @forelse ($stockByFruit as $fruitName => $fruitData)
+                                        <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="font-semibold text-white">{{ $fruitName }}</div>
+                                                <div class="text-lg font-semibold text-white">{{ number_format($fruitData['total'], 0, ',', ' ') }} kg</div>
+                                            </div>
+                                            <div class="mt-3 flex flex-wrap gap-2">
+                                                @foreach ($fruitData['calibers'] as $caliberName => $weight)
+                                                    <div class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-stone-200">
+                                                        <span class="font-semibold text-[#efc79c]">{{ $caliberName }}</span>
+                                                        <span>{{ number_format($weight, 0, ',', ' ') }} kg</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-stone-400">Aucun stock disponible pour le moment.</div>
+                                    @endforelse
+                                </div>
+                            </article>
 
-                        <article class="rounded-3xl border border-white/10 p-5" style="background: #191311;">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Stock vendu</div>
-                                    <h4 class="mt-1 font-display text-2xl text-white">Par fruit</h4>
-                                </div>
-                                <a href="{{ route('commandes.index') }}" class="text-sm font-semibold text-[#efc79c]">Voir les commandes</a>
-                            </div>
-                            <div class="mt-5 space-y-4">
-                                @forelse ($soldByFruit as $fruitName => $fruitData)
-                                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                                        <div class="flex items-center justify-between gap-3">
-                                            <div class="font-semibold text-white">{{ $fruitName }}</div>
-                                            <div class="text-lg font-semibold text-white">{{ number_format($fruitData['total'], 0, ',', ' ') }} kg</div>
-                                        </div>
-                                        <div class="mt-3 flex flex-wrap gap-2">
-                                            @foreach ($fruitData['calibers'] as $caliberName => $weight)
-                                                <div class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-stone-200">
-                                                    <span class="font-semibold text-[#efc79c]">{{ $caliberName }}</span>
-                                                    <span>{{ number_format($weight, 0, ',', ' ') }} kg</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
+                            <article class="rounded-3xl border border-white/10 p-5" style="background: #191311;">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Stock vendu</div>
+                                        <h4 class="mt-1 font-display text-2xl text-white">Par fruit</h4>
                                     </div>
-                                @empty
-                                    <div class="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-stone-400">Aucune vente enregistrée pour le moment.</div>
-                                @endforelse
-                            </div>
-                        </article>
-                    </div>
+                                    <a href="{{ route('commandes.index') }}" class="text-sm font-semibold text-[#efc79c]">Voir les commandes</a>
+                                </div>
+                                <div class="mt-5 space-y-4">
+                                    @forelse ($soldByFruit as $fruitName => $fruitData)
+                                        <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="font-semibold text-white">{{ $fruitName }}</div>
+                                                <div class="text-lg font-semibold text-white">{{ number_format($fruitData['total'], 0, ',', ' ') }} kg</div>
+                                            </div>
+                                            <div class="mt-3 flex flex-wrap gap-2">
+                                                @foreach ($fruitData['calibers'] as $caliberName => $weight)
+                                                    <div class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-stone-200">
+                                                        <span class="font-semibold text-[#efc79c]">{{ $caliberName }}</span>
+                                                        <span>{{ number_format($weight, 0, ',', ' ') }} kg</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-stone-400">Aucune vente enregistrée pour le moment.</div>
+                                    @endforelse
+                                </div>
+                            </article>
+                        </div>
+                    @endif
                 </div>
 
                 <aside class="space-y-4 rounded-3xl border border-white/10 p-5" style="background: #16110f;">
