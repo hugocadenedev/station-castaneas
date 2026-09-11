@@ -89,14 +89,18 @@ class CustomerOrderController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated) {
-                $customer = ! empty($validated['customer_id'])
-                    ? Customer::query()->find($validated['customer_id'])
+                $customerId = $validated['customer_id'] ?? null;
+                $clientName = $validated['client_name'] ?? null;
+                $orderNumber = $validated['order_number'] ?? null;
+
+                $customer = ! empty($customerId)
+                    ? Customer::query()->find($customerId)
                     : null;
 
                 $order = CustomerOrder::query()->create([
                     'customer_id' => $customer?->id,
-                    'client_name' => $customer?->name ?? ($validated['client_name'] ?: 'Client non renseigné'),
-                    'order_number' => $validated['order_number'] ?: 'TMP-CMD-'.Str::upper(Str::random(10)),
+                    'client_name' => $customer?->name ?? ($clientName ?: 'Client non renseigné'),
+                    'order_number' => $orderNumber ?: 'TMP-CMD-'.Str::upper(Str::random(10)),
                     'ordered_at' => $validated['ordered_at'],
                     'created_by' => $request->user()->id,
                 ]);
