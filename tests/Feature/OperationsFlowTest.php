@@ -475,6 +475,52 @@ class OperationsFlowTest extends TestCase
         $response->assertSee('15,000', false);
     }
 
+    public function test_calibration_store_computes_net_weight_from_gross_weight_and_tare(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('operateur');
+
+        $supplier = Supplier::query()->firstOrFail();
+        $fruit = Fruit::query()->firstOrFail();
+        $variety = Variety::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $caliber = Caliber::query()->where('fruit_id', $fruit->id)->firstOrFail();
+        $tareType = TareType::query()->where('is_active', true)->firstOrFail();
+
+        $reception = Reception::query()->create([
+            'reception_number' => 'REC-TEST-GROSS-01',
+            'received_at' => now(),
+            'supplier_id' => $supplier->id,
+            'fruit_id' => $fruit->id,
+            'variety_id' => $variety->id,
+            'received_by' => $user->id,
+            'gross_weight_kg' => 220.000,
+            'conformity_status' => 'conforming',
+            'processing_status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('calibrages.store'), [
+            'reception_id' => $reception->id,
+            'caliber_id' => $caliber->id,
+            'tare_type_id' => $tareType->id,
+            'tare_weight_kg' => 12.500,
+            'calibrated_at' => now()->format('Y-m-d H:i:s'),
+            'gross_weight_kg' => 192.500,
+            'net_weight_kg' => '',
+            'waste_weight_kg' => 5.000,
+        ]);
+
+        $response->assertRedirect(route('calibrages.create', ['reception_id' => $reception->id]));
+
+        $calibration = Calibration::query()->firstOrFail();
+        $palox = Palox::query()->firstOrFail();
+
+        $this->assertSame('180.000', $calibration->net_weight_kg);
+        $this->assertSame('180.000', $palox->initial_net_weight_kg);
+        $this->assertSame('180.000', $palox->remaining_net_weight_kg);
+    }
+
     public function test_calibration_with_waste_over_one_kg_clears_caliber(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
@@ -823,7 +869,7 @@ class OperationsFlowTest extends TestCase
         $this->assertDatabaseCount('calibrations', 0);
     }
 
-    public function test_order_creation_decrements_stock_to_zero_and_exhausts_palox(): void
+    public function test_order_creation_decrements_stock_to_zero_and_exhausts_palox_then_allows_editing_lines(): void
     {
         $this->seed([RolesAndPermissionsSeeder::class, ReferenceDataSeeder::class]);
 
@@ -880,6 +926,18 @@ class OperationsFlowTest extends TestCase
             'labeled_at' => now(),
         ]);
 
+        $secondPalox = Palox::query()->create([
+            'reception_id' => $reception->id,
+            'calibration_id' => $calibration->id,
+            'created_by' => $user->id,
+            'palox_number' => 'PAL-TEST-0002',
+            'initial_net_weight_kg' => 80.000,
+            'remaining_net_weight_kg' => 80.000,
+            'under_contract' => false,
+            'availability_status' => 'available',
+            'labeled_at' => now(),
+        ]);
+
         $response = $this->actingAs($user)->post(route('commandes.store'), [
             'customer_id' => $customer->id,
             'order_number' => '',
@@ -901,12 +959,35 @@ class OperationsFlowTest extends TestCase
         $this->assertSame('exhausted', $palox->availability_status);
         $this->assertSame(100.0, (float) $order->paloxes()->firstOrFail()->pivot->picked_net_weight_kg);
 
+        $editPage = $this->actingAs($user)->get(route('commandes.edit', $order));
+
+        $editPage->assertOk();
+        $editPage->assertSee('PAL-TEST-0001');
+        $editPage->assertSee('PAL-TEST-0002');
+
         $updateResponse = $this->actingAs($user)->patch(route('commandes.update', $order), [
             'order_number' => 'CMD-MANUEL-42',
+            'lines' => [
+                [
+                    'palox_id' => $palox->id,
+                    'picked_net_weight_kg' => 60.000,
+                ],
+                [
+                    'palox_id' => $secondPalox->id,
+                    'picked_net_weight_kg' => 30.000,
+                ],
+            ],
         ]);
 
         $updateResponse->assertRedirect(route('commandes.index'));
         $this->assertSame('CMD-MANUEL-42', $order->fresh()->order_number);
+        $this->assertSame('40.000', $palox->fresh()->remaining_net_weight_kg);
+        $this->assertSame('partial', $palox->fresh()->availability_status);
+        $this->assertSame('50.000', $secondPalox->fresh()->remaining_net_weight_kg);
+        $this->assertSame('partial', $secondPalox->fresh()->availability_status);
+        $this->assertCount(2, $order->fresh()->paloxes);
+        $this->assertSame(60.0, (float) $order->fresh()->paloxes->firstWhere('id', $palox->id)->pivot->picked_net_weight_kg);
+        $this->assertSame(30.0, (float) $order->fresh()->paloxes->firstWhere('id', $secondPalox->id)->pivot->picked_net_weight_kg);
     }
 
     public function test_calibration_index_lists_calibrated_receptions_and_detail_page(): void

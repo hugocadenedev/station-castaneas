@@ -5,7 +5,10 @@
                 <div class="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">Détail commande</div>
                 <h1 class="font-display text-3xl leading-tight text-[var(--castaneas-ink)]">{{ $order->order_number }}</h1>
             </div>
-            <a href="{{ route('commandes.index') }}" class="btn-secondary">Retour à la liste</a>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <a href="{{ route('commandes.edit', $order) }}" class="btn-primary">Réouvrir et modifier</a>
+                <a href="{{ route('commandes.index') }}" class="btn-secondary">Retour à la liste</a>
+            </div>
         </div>
     </x-slot>
 

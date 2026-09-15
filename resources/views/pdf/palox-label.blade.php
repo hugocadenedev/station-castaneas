@@ -37,7 +37,7 @@
 
         .header-fruit {
             float: left;
-            width: 74mm;
+            width: 68mm;
             height: 18mm;
             padding: 3mm 4mm 1.2mm;
             box-sizing: border-box;
@@ -46,9 +46,9 @@
 
         .header-supplier {
             float: left;
-            width: 20mm;
+            width: 26mm;
             height: 18mm;
-            padding: 3.4mm 3mm 1.2mm;
+            padding: 2.8mm 2.4mm 1.2mm;
             box-sizing: border-box;
             border-left: 0.8mm solid #111;
             overflow: hidden;
@@ -68,10 +68,21 @@
             height: 21mm;
         }
 
-        .ggn-section {
-            height: 9mm;
-            padding: 1.9mm 4.5mm 1.1mm;
+        .traceability-section {
+            height: 11mm;
+            padding: 1.8mm 3.8mm 1mm;
             text-align: left;
+        }
+
+        .traceability-column {
+            float: left;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .traceability-column + .traceability-column {
+            padding-left: 2.5mm;
+            border-left: 0.5mm solid #111;
         }
 
         .variety-section {
@@ -112,11 +123,12 @@
         }
 
         .supplier-code-value {
-            margin-top: 3.1mm;
-            font-size: 3.6mm;
+            margin-top: 1.8mm;
+            font-size: 5.4mm;
+            line-height: 0.95;
         }
 
-        .ggn-value {
+        .traceability-value {
             display: block;
             margin-top: 1.1mm;
             font-size: 3mm;
@@ -214,9 +226,16 @@
                 <div class="header-clear"></div>
             </div>
 
-            <div class="section ggn-section">
-                <span class="meta-label">GGN</span>
-                <span class="ggn-value">{{ $palox->reception->supplier->ggn_code ?: '-' }}</span>
+            <div class="section traceability-section">
+                <div class="traceability-column">
+                    <span class="meta-label">GGN</span>
+                    <span class="traceability-value">{{ $palox->reception->supplier->ggn_code ?: '-' }}</span>
+                </div>
+                <div class="traceability-column">
+                    <span class="meta-label">N° réception</span>
+                    <span class="traceability-value">{{ $palox->reception->reception_number }}</span>
+                </div>
+                <div class="section-clear"></div>
             </div>
 
             <div class="section palox-section">

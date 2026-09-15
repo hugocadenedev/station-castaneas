@@ -103,7 +103,11 @@ class CalibrationController extends Controller
             'savedPaloxesByReception' => $pendingReceptions
                 ->mapWithKeys(fn (Reception $reception) => [
                     (string) $reception->id => $reception->paloxes
-                        ->sortBy('labeled_at')
+                        ->sortByDesc(fn (Palox $palox) => sprintf(
+                            '%s-%010d',
+                            $palox->labeled_at?->format('YmdHis.u') ?? '0',
+                            $palox->id,
+                        ))
                         ->values()
                         ->map(fn (Palox $palox) => [
                             'id' => (string) $palox->id,
@@ -131,9 +135,17 @@ class CalibrationController extends Controller
             'tare_type_id' => ['required', 'exists:tare_types,id'],
             'tare_weight_kg' => ['required', 'numeric', 'min:0'],
             'calibrated_at' => ['required', 'date'],
+            'gross_weight_kg' => ['nullable', 'numeric', 'min:0'],
             'net_weight_kg' => ['nullable', 'numeric', 'min:0'],
             'waste_weight_kg' => ['required', 'numeric', 'min:0'],
         ]);
+
+        if ($request->filled('gross_weight_kg')) {
+            $validated['net_weight_kg'] = round(
+                max(0, (float) $validated['gross_weight_kg'] - (float) $validated['tare_weight_kg']),
+                3,
+            );
+        }
 
         $validated['net_weight_kg'] = $validated['net_weight_kg'] ?? 0;
         if ((float) $validated['waste_weight_kg'] > 1.0) {

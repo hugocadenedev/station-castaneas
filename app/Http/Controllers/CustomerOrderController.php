@@ -121,10 +121,31 @@ class CustomerOrderController extends Controller
         return redirect()->route('commandes.index')->with('status', 'Commande enregistree et stock mis a jour.');
     }
 
-    public function edit(CustomerOrder $commande): View
+    public function edit(Request $request, CustomerOrder $commande): View
     {
         return view('modules.commandes.edit', [
-            'order' => $commande,
+            'order' => $commande->load([
+                'customer',
+                'paloxes.reception.supplier',
+                'paloxes.reception.fruit',
+                'paloxes.reception.variety',
+                'paloxes.calibration.caliber',
+            ]),
+            'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
+            'varieties' => Variety::query()
+                ->where('is_active', true)
+                ->when($this->orderFilterValue($request, $commande, 'fruit_id'), fn ($query, $fruitId) => $query->where('fruit_id', $fruitId))
+                ->orderBy('name')
+                ->get(),
+            'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
+            'availablePaloxes' => $this->availablePaloxes(
+                $this->orderFilterValue($request, $commande, 'fruit_id'),
+                $this->orderFilterValue($request, $commande, 'variety_id'),
+                $this->orderFilterValue($request, $commande, 'caliber_id'),
+                $this->orderFilterValue($request, $commande, 'supplier_id'),
+                $commande,
+            ),
         ]);
     }
 
@@ -132,26 +153,43 @@ class CustomerOrderController extends Controller
     {
         $validated = $request->validate([
             'order_number' => ['required', 'string', 'max:255', 'unique:customer_orders,order_number,'.$commande->id],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.palox_id' => ['required', 'distinct', 'exists:paloxes,id'],
+            'lines.*.picked_net_weight_kg' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
-        $commande->update([
-            'order_number' => $validated['order_number'],
-        ]);
+        try {
+            DB::transaction(function () use ($request, $validated, $commande) {
+                $commande->update([
+                    'order_number' => $validated['order_number'],
+                ]);
 
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($commande)
-            ->event('order_number_updated')
-            ->log('Modification du numero de commande');
+                $this->stockService->updateOrderWithLines($commande, $validated['lines']);
 
-        return redirect()->route('commandes.index')->with('status', 'Numero de commande mis a jour.');
+                activity()
+                    ->causedBy($request->user())
+                    ->performedOn($commande)
+                    ->event('order_updated')
+                    ->log('Modification d\'une commande client');
+            });
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors(['lines' => $exception->getMessage()])->withInput();
+        }
+
+        return redirect()->route('commandes.index')->with('status', 'Commande mise a jour et stock recalcule.');
     }
 
-    private function availablePaloxes(?int $fruitId, ?int $varietyId, ?int $caliberId, ?int $supplierId = null)
+    private function availablePaloxes(?int $fruitId, ?int $varietyId, ?int $caliberId, ?int $supplierId = null, ?CustomerOrder $order = null)
     {
         return Palox::query()
             ->with(['reception.fruit', 'reception.variety', 'reception.supplier', 'calibration.caliber'])
-            ->whereIn('availability_status', ['available', 'partial'])
+            ->where(function ($query) use ($order) {
+                $query->whereIn('availability_status', ['available', 'partial']);
+
+                if ($order) {
+                    $query->orWhereHas('orders', fn ($subQuery) => $subQuery->whereKey($order->id));
+                }
+            })
             ->whereHas('reception', fn ($query) => $query->where('processing_status', 'calibrated'))
             ->when($fruitId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('fruit_id', $fruitId)))
             ->when($varietyId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('variety_id', $varietyId)))
@@ -159,5 +197,28 @@ class CustomerOrderController extends Controller
             ->when($supplierId, fn ($query) => $query->whereHas('reception', fn ($subQuery) => $subQuery->where('supplier_id', $supplierId)))
             ->orderBy('palox_number')
             ->get();
+    }
+
+    private function orderFilterValue(Request $request, CustomerOrder $order, string $field): ?int
+    {
+        if ($request->filled($field)) {
+            return $request->integer($field);
+        }
+
+        return match ($field) {
+            'fruit_id' => $order->paloxes->pluck('reception.fruit_id')->filter()->unique()->count() === 1
+                ? (int) $order->paloxes->pluck('reception.fruit_id')->first()
+                : null,
+            'variety_id' => $order->paloxes->pluck('reception.variety_id')->filter()->unique()->count() === 1
+                ? (int) $order->paloxes->pluck('reception.variety_id')->first()
+                : null,
+            'caliber_id' => $order->paloxes->pluck('calibration.caliber_id')->filter()->unique()->count() === 1
+                ? (int) $order->paloxes->pluck('calibration.caliber_id')->first()
+                : null,
+            'supplier_id' => $order->paloxes->pluck('reception.supplier_id')->filter()->unique()->count() === 1
+                ? (int) $order->paloxes->pluck('reception.supplier_id')->first()
+                : null,
+            default => null,
+        };
     }
 }

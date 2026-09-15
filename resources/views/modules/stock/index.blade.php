@@ -14,7 +14,20 @@
         varietyId: @js((string) request('variety_id', '')),
         varietiesByFruit: @js($varietiesByFruit),
         availableVarieties: [],
+        findFruitIdByVariety(varietyId) {
+            for (const [fruitId, varieties] of Object.entries(this.varietiesByFruit)) {
+                if (varieties.some((variety) => variety.id === varietyId)) {
+                    return fruitId;
+                }
+            }
+
+            return '';
+        },
         updateVarieties() {
+            if (! this.fruitId && this.varietyId) {
+                this.fruitId = this.findFruitIdByVariety(this.varietyId);
+            }
+
             this.availableVarieties = this.varietiesByFruit[this.fruitId] || [];
 
             if (! this.availableVarieties.some((variety) => variety.id === this.varietyId)) {

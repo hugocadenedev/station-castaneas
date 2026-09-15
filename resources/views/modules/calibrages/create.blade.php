@@ -18,6 +18,7 @@
         receptionNumber: '',
         varietyName: '',
         fruitName: '',
+        grossWeight: @js((string) old('gross_weight_kg', '')),
         caliberId: @js((string) old('caliber_id', '')),
         netWeight: @js((string) old('net_weight_kg', '')),
         wasteWeight: @js((string) old('waste_weight_kg', '0')),
@@ -59,10 +60,23 @@
 
             if (! selectedOption || ! selectedOption.value) {
                 this.tareWeight = '0.000';
+                this.syncNetWeightFromGross();
                 return;
             }
 
             this.tareWeight = selectedOption.dataset.weightKg || '0.000';
+            this.syncNetWeightFromGross();
+        },
+        syncNetWeightFromGross() {
+            if (this.grossWeight === '') {
+                return;
+            }
+
+            const grossWeight = Number(this.grossWeight || 0);
+            const tareWeight = Number(this.tareWeight || 0);
+            const computedNetWeight = Math.max(0, grossWeight - tareWeight);
+
+            this.netWeight = computedNetWeight.toFixed(3);
         },
         hasSignificantWaste() {
             return Number(this.wasteWeight || 0) > 1;
@@ -135,11 +149,16 @@
                         <input id="tare_weight_kg" name="tare_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="tareWeight" required>
                             <x-input-error class="mt-2" :messages="$errors->get('tare_weight_kg')" />
                     </div>
-                    <div class="grid gap-4 md:grid-cols-3">
+                    <div class="grid gap-4 md:grid-cols-4">
                         <div>
                             <x-input-label for="calibrated_at" :value="'Date'" />
                             <x-text-input id="calibrated_at" name="calibrated_at" type="datetime-local" class="input mt-1 block w-full" :value="old('calibrated_at', now()->format('Y-m-d\TH:i'))" required />
                             <x-input-error class="mt-2" :messages="$errors->get('calibrated_at')" />
+                        </div>
+                        <div>
+                            <x-input-label for="gross_weight_kg" :value="'Poids brut (kg)'" />
+                            <x-text-input id="gross_weight_kg" name="gross_weight_kg" type="number" step="0.001" min="0" class="input mt-1 block w-full" x-model="grossWeight" x-on:input="syncNetWeightFromGross()" />
+                            <x-input-error class="mt-2" :messages="$errors->get('gross_weight_kg')" />
                         </div>
                         <div>
                             <x-input-label for="net_weight_kg" :value="'Poids net (kg)'" />
@@ -176,7 +195,7 @@
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row">
                         <a
-                            :href="savedPaloxes.length === 0 ? '#' : '{{ url('/calibrages/paloxes') }}/' + savedPaloxes[savedPaloxes.length - 1].id + '/edit'"
+                            :href="savedPaloxes.length === 0 ? '#' : '{{ url('/calibrages/paloxes') }}/' + savedPaloxes[0].id + '/edit'"
                             class="btn-secondary"
                             x-bind:class="savedPaloxes.length === 0 ? 'pointer-events-none opacity-50' : ''"
                         >Modifier le dernier palox</a>
@@ -208,7 +227,7 @@
                             <tbody class="divide-y divide-stone-100 bg-white">
                                 <template x-for="(palox, index) in savedPaloxes" :key="palox.id">
                                     <tr>
-                                        <td data-label="Étape" class="font-semibold text-stone-800" x-text="`Palox ${index + 1}`"></td>
+                                        <td data-label="Étape" class="font-semibold text-stone-800" x-text="`Palox ${savedPaloxes.length - index}`"></td>
                                         <td data-label="Palox" class="font-semibold text-stone-800" x-text="palox.palox_number"></td>
                                         <td data-label="Calibre" x-text="palox.caliber_name"></td>
                                         <td data-label="Poids net"><div x-text="`${palox.net_weight_kg} kg`"></div><div class="text-xs text-stone-500" x-text="`Déchet: ${palox.waste_weight_kg} kg`"></div></td>

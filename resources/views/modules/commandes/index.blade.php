@@ -51,7 +51,7 @@
                                 <td data-label="Actions">
                                     <div class="flex flex-col gap-2">
                                         <a href="{{ route('commandes.show', $order) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Voir le détail</a>
-                                        <a href="{{ route('commandes.edit', $order) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Modifier le numéro</a>
+                                        <a href="{{ route('commandes.edit', $order) }}" class="text-sm font-semibold text-[var(--castaneas-bordeaux)]">Modifier la commande</a>
                                     </div>
                                 </td>
                             </tr>
