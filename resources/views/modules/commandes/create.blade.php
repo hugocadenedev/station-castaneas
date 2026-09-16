@@ -1,5 +1,13 @@
 <x-app-layout>
     @php
+        $varietiesCatalog = $varieties
+            ->map(fn ($variety) => [
+                'id' => (string) $variety->id,
+                'fruitId' => (string) $variety->fruit_id,
+                'name' => $variety->name,
+            ])
+            ->values();
+
         $paloxCatalog = $availablePaloxes->map(function ($palox) {
             $statusLabel = $palox->availability_status === 'partial' ? 'Partiel' : 'Disponible';
             $remainingWeight = round((float) $palox->remaining_net_weight_kg, 3);
@@ -7,9 +15,13 @@
             return [
                 'id' => (string) $palox->id,
                 'number' => $palox->palox_number,
+                'supplierId' => (string) $palox->reception->supplier_id,
                 'supplier' => $palox->reception->supplier->supplier_code,
+                'fruitId' => (string) $palox->reception->fruit_id,
                 'fruit' => $palox->reception->fruit->name,
+                'varietyId' => (string) $palox->reception->variety_id,
                 'variety' => $palox->reception->variety->name,
+                'caliberId' => (string) $palox->calibration->caliber_id,
                 'caliber' => $palox->calibration->caliber->name,
                 'remainingWeight' => number_format($remainingWeight, 3, ',', ' '),
                 'remainingWeightValue' => number_format($remainingWeight, 3, '.', ''),
@@ -40,6 +52,13 @@
             })
             ->filter()
             ->values();
+
+        $initialFilters = [
+            'fruitId' => (string) old('fruit_id', request('fruit_id', '')),
+            'varietyId' => (string) old('variety_id', request('variety_id', '')),
+            'caliberId' => (string) old('caliber_id', request('caliber_id', '')),
+            'supplierId' => (string) old('supplier_id', request('supplier_id', '')),
+        ];
     @endphp
 
     <x-slot name="header">
@@ -58,16 +77,60 @@
         class="space-y-6"
         x-data="{
             catalog: @js($paloxCatalog),
+            varieties: @js($varietiesCatalog),
             rows: @js($selectedPaloxes),
+            filters: @js($initialFilters),
             search: '',
+            availableVarieties() {
+                if (! this.filters.fruitId) {
+                    return this.varieties;
+                }
+
+                return this.varieties.filter((entry) => entry.fruitId === this.filters.fruitId);
+            },
+            setFilter(field, value) {
+                this.filters[field] = value;
+
+                if (field === 'fruitId' && this.filters.varietyId) {
+                    const selectedVariety = this.varieties.find((entry) => entry.id === this.filters.varietyId);
+
+                    if (! selectedVariety || selectedVariety.fruitId !== this.filters.fruitId) {
+                        this.filters.varietyId = '';
+                    }
+                }
+            },
             filteredCatalog() {
                 const term = this.search.trim().toLowerCase();
 
-                if (! term) {
-                    return this.catalog;
-                }
+                return this.catalog.filter((entry) => {
+                    if (this.filters.fruitId && entry.fruitId !== this.filters.fruitId) {
+                        return false;
+                    }
 
-                return this.catalog.filter((entry) => entry.number.toLowerCase().includes(term));
+                    if (this.filters.varietyId && entry.varietyId !== this.filters.varietyId) {
+                        return false;
+                    }
+
+                    if (this.filters.caliberId && entry.caliberId !== this.filters.caliberId) {
+                        return false;
+                    }
+
+                    if (this.filters.supplierId && entry.supplierId !== this.filters.supplierId) {
+                        return false;
+                    }
+
+                    if (! term) {
+                        return true;
+                    }
+
+                    return (
+                        entry.number.toLowerCase().includes(term)
+                        || entry.supplier.toLowerCase().includes(term)
+                        || entry.fruit.toLowerCase().includes(term)
+                        || entry.variety.toLowerCase().includes(term)
+                        || entry.caliber.toLowerCase().includes(term)
+                    );
+                });
             },
             isSelected(paloxId) {
                 return this.rows.some((row) => row.palox_id === paloxId);
@@ -111,37 +174,37 @@
                     <div class="grid gap-4 2xl:grid-cols-4">
                         <div>
                             <x-input-label for="fruit_id" :value="'Filtre fruit pour les palox'" />
-                            <select id="fruit_id" name="fruit_id" onchange="applyPaloxFilter('fruit_id', this.value)" class="input mt-1 block w-full">
+                            <select id="fruit_id" name="fruit_id" x-model="filters.fruitId" @change="setFilter('fruitId', $event.target.value)" class="input mt-1 block w-full">
                                 <option value="">Tous les fruits</option>
                                 @foreach ($fruits as $fruit)
-                                    <option value="{{ $fruit->id }}" @selected((string) request('fruit_id') === (string) $fruit->id)>{{ $fruit->name }}</option>
+                                    <option value="{{ $fruit->id }}">{{ $fruit->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <x-input-label for="variety_id" :value="'Filtre variété pour les palox'" />
-                            <select id="variety_id" name="variety_id" onchange="applyPaloxFilter('variety_id', this.value)" class="input mt-1 block w-full">
+                            <select id="variety_id" name="variety_id" x-model="filters.varietyId" @change="setFilter('varietyId', $event.target.value)" class="input mt-1 block w-full">
                                 <option value="">Toutes les variétés</option>
-                                @foreach ($varieties as $variety)
-                                    <option value="{{ $variety->id }}" @selected((string) request('variety_id') === (string) $variety->id)>{{ $variety->name }}</option>
-                                @endforeach
+                                <template x-for="variety in availableVarieties()" :key="variety.id">
+                                    <option :value="variety.id" x-text="variety.name"></option>
+                                </template>
                             </select>
                         </div>
                         <div>
                             <x-input-label for="caliber_id" :value="'Filtre calibre pour les palox'" />
-                            <select id="caliber_id" name="caliber_id" onchange="applyPaloxFilter('caliber_id', this.value)" class="input mt-1 block w-full">
+                            <select id="caliber_id" name="caliber_id" x-model="filters.caliberId" @change="setFilter('caliberId', $event.target.value)" class="input mt-1 block w-full">
                                 <option value="">Tous les calibres</option>
                                 @foreach ($calibers as $caliber)
-                                    <option value="{{ $caliber->id }}" @selected((string) request('caliber_id') === (string) $caliber->id)>{{ $caliber->name }}</option>
+                                    <option value="{{ $caliber->id }}">{{ $caliber->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <x-input-label for="supplier_id" :value="'Filtre fournisseur pour les palox'" />
-                            <select id="supplier_id" name="supplier_id" onchange="applyPaloxFilter('supplier_id', this.value)" class="input mt-1 block w-full">
+                            <select id="supplier_id" name="supplier_id" x-model="filters.supplierId" @change="setFilter('supplierId', $event.target.value)" class="input mt-1 block w-full">
                                 <option value="">Tous les fournisseurs</option>
                                 @foreach ($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}" @selected((string) request('supplier_id') === (string) $supplier->id)>{{ $supplier->supplier_code }}</option>
+                                    <option value="{{ $supplier->id }}">{{ $supplier->supplier_code }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -267,23 +330,4 @@
         </section>
     </div>
 
-    <script>
-        function applyPaloxFilter(field, value) {
-            const params = new URLSearchParams(window.location.search);
-            params.set(field, value);
-
-            const orderNumber = document.getElementById('order_number')?.value;
-            const orderedAt = document.getElementById('ordered_at')?.value;
-
-            if (orderNumber) {
-                params.set('order_number', orderNumber);
-            }
-
-            if (orderedAt) {
-                params.set('ordered_at', orderedAt);
-            }
-
-            window.location.search = params.toString();
-        }
-    </script>
 </x-app-layout>

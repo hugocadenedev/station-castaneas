@@ -670,7 +670,8 @@ class OperationsFlowTest extends TestCase
             ->get(route('commandes.create', ['fruit_id' => $chataigne->id]))
             ->assertOk()
             ->assertSee($chataigneVariety->name)
-            ->assertDontSee($ceriseVariety->name);
+            ->assertSee($ceriseVariety->name)
+            ->assertSee('x-for="variety in availableVarieties()"', false);
     }
 
     public function test_palox_number_generation_stays_unique_after_deleting_an_older_palox(): void

@@ -45,19 +45,10 @@ class CustomerOrderController extends Controller
     {
         return view('modules.commandes.create', [
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
-            'varieties' => Variety::query()
-                ->where('is_active', true)
-                ->when($request->filled('fruit_id'), fn ($query) => $query->where('fruit_id', $request->integer('fruit_id')))
-                ->orderBy('name')
-                ->get(),
+            'varieties' => Variety::query()->where('is_active', true)->orderBy('name')->get(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
-            'availablePaloxes' => $this->availablePaloxes(
-                $request->integer('fruit_id'),
-                $request->integer('variety_id'),
-                $request->integer('caliber_id'),
-                $request->integer('supplier_id'),
-            ),
+            'availablePaloxes' => $this->availablePaloxes(null, null, null, null),
         ]);
     }
 
@@ -132,20 +123,10 @@ class CustomerOrderController extends Controller
                 'paloxes.calibration.caliber',
             ]),
             'fruits' => Fruit::query()->where('is_active', true)->orderBy('name')->get(),
-            'varieties' => Variety::query()
-                ->where('is_active', true)
-                ->when($this->orderFilterValue($request, $commande, 'fruit_id'), fn ($query, $fruitId) => $query->where('fruit_id', $fruitId))
-                ->orderBy('name')
-                ->get(),
+            'varieties' => Variety::query()->where('is_active', true)->orderBy('name')->get(),
             'calibers' => Caliber::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'suppliers' => Supplier::query()->where('is_active', true)->orderBy('supplier_code')->get(),
-            'availablePaloxes' => $this->availablePaloxes(
-                $this->orderFilterValue($request, $commande, 'fruit_id'),
-                $this->orderFilterValue($request, $commande, 'variety_id'),
-                $this->orderFilterValue($request, $commande, 'caliber_id'),
-                $this->orderFilterValue($request, $commande, 'supplier_id'),
-                $commande,
-            ),
+            'availablePaloxes' => $this->availablePaloxes(null, null, null, null, $commande),
         ]);
     }
 
@@ -199,26 +180,4 @@ class CustomerOrderController extends Controller
             ->get();
     }
 
-    private function orderFilterValue(Request $request, CustomerOrder $order, string $field): ?int
-    {
-        if ($request->filled($field)) {
-            return $request->integer($field);
-        }
-
-        return match ($field) {
-            'fruit_id' => $order->paloxes->pluck('reception.fruit_id')->filter()->unique()->count() === 1
-                ? (int) $order->paloxes->pluck('reception.fruit_id')->first()
-                : null,
-            'variety_id' => $order->paloxes->pluck('reception.variety_id')->filter()->unique()->count() === 1
-                ? (int) $order->paloxes->pluck('reception.variety_id')->first()
-                : null,
-            'caliber_id' => $order->paloxes->pluck('calibration.caliber_id')->filter()->unique()->count() === 1
-                ? (int) $order->paloxes->pluck('calibration.caliber_id')->first()
-                : null,
-            'supplier_id' => $order->paloxes->pluck('reception.supplier_id')->filter()->unique()->count() === 1
-                ? (int) $order->paloxes->pluck('reception.supplier_id')->first()
-                : null,
-            default => null,
-        };
-    }
 }
