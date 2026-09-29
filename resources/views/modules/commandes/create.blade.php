@@ -21,14 +21,14 @@
                 'fruit' => $palox->reception->fruit->name,
                 'varietyId' => (string) $palox->reception->variety_id,
                 'variety' => $palox->reception->variety->name,
-                'caliberId' => (string) $palox->calibration->caliber_id,
-                'caliber' => $palox->calibration->caliber->name,
+                'caliberId' => (string) $palox->calibration?->caliber_id,
+                'caliber' => $palox->calibration?->caliber?->name ?? 'Sans calibre',
                 'remainingWeight' => number_format($remainingWeight, 3, ',', ' '),
                 'remainingWeightValue' => number_format($remainingWeight, 3, '.', ''),
                 'initialWeight' => number_format((float) $palox->initial_net_weight_kg, 3, ',', ' '),
                 'status' => $statusLabel,
                 'statusClass' => $palox->availability_status === 'partial' ? 'pill pill-warn' : 'pill pill-ok',
-                'details' => $palox->reception->supplier->supplier_code.' - '.$palox->reception->fruit->name.' / '.$palox->reception->variety->name.' - calibre '.$palox->calibration->caliber->name.' - '.$statusLabel,
+                'details' => $palox->reception->supplier->supplier_code.' - '.$palox->reception->fruit->name.' / '.$palox->reception->variety->name.' - calibre '.($palox->calibration?->caliber?->name ?? 'Sans calibre').' - '.$statusLabel,
             ];
         })->values();
 

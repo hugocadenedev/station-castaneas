@@ -70,7 +70,7 @@
                                 <td data-label="Fournisseur">{{ $palox->reception->supplier->supplier_code }}</td>
                                 <td data-label="Fruit">{{ $palox->reception->fruit->name }}</td>
                                 <td data-label="Variété">{{ $palox->reception->variety->name }}</td>
-                                <td data-label="Calibre">{{ $palox->calibration->caliber->name }}</td>
+                                <td data-label="Calibre">{{ $palox->calibration?->caliber?->name ?? 'Sans calibre' }}</td>
                                 <td data-label="Prélevé">{{ number_format((float) $palox->pivot->picked_net_weight_kg, 3, ',', ' ') }} kg</td>
                                 <td data-label="Reste">{{ number_format((float) $palox->remaining_net_weight_kg, 3, ',', ' ') }} kg</td>
                                 <td data-label="Certifié">
