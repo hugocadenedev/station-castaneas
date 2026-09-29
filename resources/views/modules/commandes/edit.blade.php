@@ -122,6 +122,10 @@
                     }
                 }
             },
+            resetFilters() {
+                this.filters = { fruitId: '', varietyId: '', caliberId: '', supplierId: '' };
+                this.search = '';
+            },
             filteredCatalog() {
                 const term = this.search.trim().toLowerCase();
 
@@ -196,6 +200,10 @@
                         </div>
                     </div>
 
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="text-sm text-stone-500">Ces filtres n'affectent que la liste ci-dessous : les palox déjà ajoutés restent dans la commande même si vous changez de fruit.</p>
+                        <button type="button" @click="resetFilters()" class="btn-secondary shrink-0 whitespace-nowrap">Réinitialiser les filtres</button>
+                    </div>
                     <div class="grid gap-4 2xl:grid-cols-4">
                         <div>
                             <x-input-label for="fruit_id" :value="'Filtre fruit pour les palox'" />

@@ -24,16 +24,18 @@ Route::get('/dashboard', function () {
     $isSuperadmin = auth()->user()?->hasRole('superadmin');
     $stockByFruit = collect();
     $soldByFruit = collect();
+    $stockByVariety = collect();
+    $soldByVariety = collect();
 
     if ($isSuperadmin) {
         $availablePaloxes = Palox::query()
             ->whereIn('availability_status', ['available', 'partial'])
-            ->with(['reception.fruit', 'calibration.caliber'])
+            ->with(['reception.fruit', 'reception.variety', 'calibration.caliber'])
             ->get();
 
         $soldPaloxes = Palox::query()
             ->whereHas('orders')
-            ->with(['reception.fruit', 'calibration.caliber', 'orders'])
+            ->with(['reception.fruit', 'reception.variety', 'calibration.caliber', 'orders'])
             ->get();
 
         $buildFruitBreakdown = function ($paloxes, $weightResolver) {
@@ -53,8 +55,37 @@ Route::get('/dashboard', function () {
                 ->sortByDesc(fn ($fruit) => $fruit['total']);
         };
 
+        $buildVarietyBreakdown = function ($paloxes, $weightResolver) {
+            return $paloxes
+                ->groupBy(fn ($palox) => $palox->reception->fruit->name)
+                ->map(function ($fruitGroup) use ($weightResolver) {
+                    $byVariety = $fruitGroup
+                        ->groupBy(fn ($palox) => $palox->reception->variety->name)
+                        ->map(function ($varietyGroup) use ($weightResolver) {
+                            $byCaliber = $varietyGroup
+                                ->groupBy(fn ($palox) => $palox->calibration?->caliber?->name ?? 'Sans calibre')
+                                ->map(fn ($caliberGroup) => $caliberGroup->sum($weightResolver))
+                                ->sortKeys();
+
+                            return [
+                                'total' => $byCaliber->sum(),
+                                'calibers' => $byCaliber,
+                            ];
+                        })
+                        ->sortByDesc(fn ($variety) => $variety['total']);
+
+                    return [
+                        'total' => $byVariety->sum(fn ($variety) => $variety['total']),
+                        'varieties' => $byVariety,
+                    ];
+                })
+                ->sortByDesc(fn ($fruit) => $fruit['total']);
+        };
+
         $stockByFruit = $buildFruitBreakdown($availablePaloxes, fn ($palox) => (float) $palox->remaining_net_weight_kg);
         $soldByFruit = $buildFruitBreakdown($soldPaloxes, fn ($palox) => (float) $palox->orders->sum('pivot.picked_net_weight_kg'));
+        $stockByVariety = $buildVarietyBreakdown($availablePaloxes, fn ($palox) => (float) $palox->remaining_net_weight_kg);
+        $soldByVariety = $buildVarietyBreakdown($soldPaloxes, fn ($palox) => (float) $palox->orders->sum('pivot.picked_net_weight_kg'));
     }
 
     $ordersToday = CustomerOrder::query()
@@ -66,6 +97,8 @@ Route::get('/dashboard', function () {
         'isSuperadmin' => $isSuperadmin,
         'stockByFruit' => $stockByFruit,
         'soldByFruit' => $soldByFruit,
+        'stockByVariety' => $stockByVariety,
+        'soldByVariety' => $soldByVariety,
         'stats' => [
             'receptions_today' => Reception::query()->whereDate('received_at', today())->count(),
             'pending_receptions' => Reception::query()->where('processing_status', 'pending')->count(),

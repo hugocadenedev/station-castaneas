@@ -38,12 +38,12 @@ class Calibration extends Model
 
     public function caliber(): BelongsTo
     {
-        return $this->belongsTo(Caliber::class);
+        return $this->belongsTo(Caliber::class)->withTrashed();
     }
 
     public function tareType(): BelongsTo
     {
-        return $this->belongsTo(TareType::class);
+        return $this->belongsTo(TareType::class)->withTrashed();
     }
 
     public function operator(): BelongsTo

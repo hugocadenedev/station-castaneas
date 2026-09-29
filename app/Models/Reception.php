@@ -33,17 +33,17 @@ class Reception extends Model
 
     public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class)->withTrashed();
     }
 
     public function fruit(): BelongsTo
     {
-        return $this->belongsTo(Fruit::class);
+        return $this->belongsTo(Fruit::class)->withTrashed();
     }
 
     public function variety(): BelongsTo
     {
-        return $this->belongsTo(Variety::class);
+        return $this->belongsTo(Variety::class)->withTrashed();
     }
 
     public function operator(): BelongsTo

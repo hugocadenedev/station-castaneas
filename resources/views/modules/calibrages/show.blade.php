@@ -14,7 +14,7 @@
 
     @php
         $calibrations = $reception->calibrations->sortBy('calibrated_at')->values();
-        $paloxes = $reception->paloxes->sortBy('labeled_at')->values();
+        $paloxes = $reception->paloxes->sortByDesc('labeled_at')->values();
     @endphp
 
     <div class="space-y-6">
